@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Configuration;
 using System.Text;
@@ -176,6 +177,82 @@ namespace RocketTanuki
             Ply = int.Parse(sfen.Substring(index));
         }
 
+        public override String ToString()
+        {
+            var writer = new StringWriter();
+            writer.WriteLine("+----+----+----+----+----+----+----+----+----+");
+            for (int rank = 0; rank < BoardSize; ++rank)
+            {
+                writer.Write("|");
+                for (int file = 0; file < BoardSize; ++file)
+                {
+                    writer.Write(PieceToString[(int)Board[file, rank]]);
+                    writer.Write("|");
+                }
+                writer.WriteLine();
+
+                writer.WriteLine("+----+----+----+----+----+----+----+----+----+");
+            }
+
+            writer.Write("先手 手駒 : ");
+            for (var piece = Piece.BlackPawn; piece < Piece.WhitePawn; ++piece)
+            {
+                for (int i = 0; i < HandPieces[(int)piece]; ++i)
+                {
+                    writer.Write(PieceToString[(int)piece][0]);
+                }
+            }
+
+            writer.Write(" , 後手 手駒 : ");
+            for (var piece = Piece.WhitePawn; piece < Piece.NumPieces; ++piece)
+            {
+                for (int i = 0; i < HandPieces[(int)piece]; ++i)
+                {
+                    writer.Write(PieceToString[(int)piece][0]);
+                }
+            }
+            writer.WriteLine();
+
+            writer.Write("手番 = ");
+            writer.Write(SideToMove == Color.Black ? "先手" : "後手");
+            writer.WriteLine();
+
+            return writer.ToString();
+        }
+
         private static Piece[] CharToPiece = new Piece[128];
+        private static String[] PieceToString = new[]
+        {
+            "　　",
+            " 歩 ",
+            " 香 ",
+            " 桂 ",
+            " 銀 ",
+            " 金 ",
+            " 角 ",
+            " 飛 ",
+            " 王 ",
+            " と ",
+            " 杏 ",
+            " 圭 ",
+            " 全 ",
+            " 馬 ",
+            " 龍 ",
+            "歩↓",
+            "香↓",
+            "桂↓",
+            "銀↓",
+            "金↓",
+            "角↓",
+            "飛↓",
+            "王↓",
+            "と↓",
+            "杏↓",
+            "圭↓",
+            "全↓",
+            "馬↓",
+            "龍↓",
+            null,
+        };
     }
 }
