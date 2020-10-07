@@ -6,14 +6,17 @@ using System.Threading.Tasks;
 
 namespace RocketTanuki
 {
+    /// <summary>
+    /// 指し手を表すデータ構造
+    /// </summary>
     class Move
     {
-        public int FromFile { get; set; }
-        public int FromRank { get; set; }
-        public Piece FromPiece { get; set; }
-        public int ToFile { get; set; }
-        public int ToRank { get; set; }
-        public Piece ToPiece { get; set; }
+        public int FileFrom { get; set; }
+        public int RankFrom { get; set; }
+        public Piece PieceFrom { get; set; }
+        public int FileTo { get; set; }
+        public int RankTo { get; set; }
+        public Piece PieceTo { get; set; }
         public bool Drop { get; set; }
         public bool Promotion { get; set; }
     }

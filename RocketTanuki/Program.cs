@@ -8,9 +8,14 @@ namespace RocketTanuki
 {
     class Program
     {
+        void Run()
+        {
+            Types.Initialize();
+        }
+
         static void Main(string[] args)
         {
-
+            new Program().Run();
         }
     }
 }

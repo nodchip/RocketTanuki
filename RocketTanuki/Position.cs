@@ -8,9 +8,12 @@ using System.Threading.Tasks;
 
 namespace RocketTanuki
 {
+    /// <summary>
+    /// 局面を表すデータ構造
+    /// </summary>
     class Position
     {
-        const int BoardSize = 9;
+        public const int BoardSize = 9;
         public Color SideToMove { get; set; }
         public Piece[,] Board { get; } = new Piece[BoardSize, BoardSize];
         public int[] HandPieces { get; } = new int[(int)Piece.NumPieces];
@@ -21,29 +24,29 @@ namespace RocketTanuki
         /// <param name="move"></param>
         public void DoMove(Move move)
         {
-            Debug.Assert(move.Drop || Board[move.FromFile, move.FromRank] == move.FromPiece);
-            Debug.Assert(move.Drop || Board[move.ToFile, move.ToRank] == move.ToPiece);
+            Debug.Assert(move.Drop || Board[move.FileFrom, move.RankFrom] == move.PieceFrom);
+            Debug.Assert(move.Drop || Board[move.FileTo, move.RankTo] == move.PieceTo);
 
             // 相手の駒を取る
-            if (move.ToPiece != Piece.NoPiece)
+            if (move.PieceTo != Piece.NoPiece)
             {
-                ++HandPieces[(int)move.ToPiece];
+                ++HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()];
             }
 
-            Board[move.ToFile, move.ToRank] = move.Promotion
-                ? Types.ToPromoted(move.FromPiece)
-                : move.FromPiece;
+            Board[move.FileTo, move.RankTo] = move.Promotion
+                ? Types.ToPromoted(move.PieceFrom)
+                : move.PieceFrom;
 
             if (move.Drop)
             {
                 // 駒を打つ指し手
-                Debug.Assert(HandPieces[(int)move.FromPiece] > 0);
-                --HandPieces[(int)move.FromPiece];
+                Debug.Assert(HandPieces[(int)move.PieceFrom] > 0);
+                --HandPieces[(int)move.PieceFrom];
             }
             else
             {
                 // 駒を移動する指し手
-                Board[move.FromFile, move.FromRank] = Piece.NoPiece;
+                Board[move.FileFrom, move.RankFrom] = Piece.NoPiece;
             }
         }
 
@@ -56,21 +59,21 @@ namespace RocketTanuki
             if (move.Drop)
             {
                 // 駒を打つ指し手
-                ++HandPieces[(int)move.FromPiece];
+                ++HandPieces[(int)move.PieceFrom];
             }
             else
             {
                 // 駒を移動する指し手
-                Board[move.FromFile, move.FromRank] = move.FromPiece;
+                Board[move.FileFrom, move.RankFrom] = move.PieceFrom;
             }
 
-            Board[move.ToFile, move.ToRank] = move.ToPiece;
+            Board[move.FileTo, move.RankTo] = move.PieceTo;
 
             // 相手の駒を取る
-            if (move.ToPiece != Piece.NoPiece)
+            if (move.PieceTo != Piece.NoPiece)
             {
-                Debug.Assert(HandPieces[(int)move.ToPiece] > 0);
-                --HandPieces[(int)move.ToPiece];
+                Debug.Assert(HandPieces[(int)move.PieceTo] > 0);
+                --HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()];
             }
         }
     }
