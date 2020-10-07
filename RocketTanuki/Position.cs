@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Configuration;
 using System.Text;
 using System.Threading.Tasks;
+using static RocketTanuki.Types;
 
 namespace RocketTanuki
 {
@@ -17,6 +18,27 @@ namespace RocketTanuki
         public Color SideToMove { get; set; }
         public Piece[,] Board { get; } = new Piece[BoardSize, BoardSize];
         public int[] HandPieces { get; } = new int[(int)Piece.NumPieces];
+        public int Ply { get; set; }
+
+        public static void Initialize()
+        {
+            CharToPiece['K'] = Piece.BlackKing;
+            CharToPiece['k'] = Piece.WhiteKing;
+            CharToPiece['R'] = Piece.BlackRook;
+            CharToPiece['r'] = Piece.WhiteRook;
+            CharToPiece['B'] = Piece.BlackBishop;
+            CharToPiece['b'] = Piece.WhiteBishop;
+            CharToPiece['G'] = Piece.BlackGold;
+            CharToPiece['g'] = Piece.WhiteGold;
+            CharToPiece['S'] = Piece.BlackSilver;
+            CharToPiece['s'] = Piece.WhiteSilver;
+            CharToPiece['N'] = Piece.BlackKnight;
+            CharToPiece['n'] = Piece.WhiteKnight;
+            CharToPiece['L'] = Piece.BlackLance;
+            CharToPiece['l'] = Piece.WhiteLance;
+            CharToPiece['P'] = Piece.BlackPawn;
+            CharToPiece['p'] = Piece.WhitePawn;
+        }
 
         /// <summary>
         /// 与えられた指し手に従い、局面を更新する。
@@ -76,5 +98,84 @@ namespace RocketTanuki
                 --HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()];
             }
         }
+
+        /// <summary>
+        /// sfen文字列をセットする
+        /// </summary>
+        /// <param name="sfen"></param>
+        public void Set(string sfen)
+        {
+            int file = BoardSize - 1;
+            int rank = 0;
+            int index = 0;
+            bool promotion = false;
+            while (true)
+            {
+                var ch = sfen[index++];
+                if (ch == ' ')
+                {
+                    break;
+                }
+                else if (ch == '/')
+                {
+                    Debug.Assert(file == -1);
+                    ++rank;
+                    file = BoardSize - 1;
+                }
+                else if (ch == '+')
+                {
+                    promotion = true;
+                }
+                else if (Char.IsDigit(ch))
+                {
+                    int numNoPieces = ch - '0';
+                    do
+                    {
+                        Board[file--, rank] = Piece.NoPiece;
+                    } while (--numNoPieces > 0);
+                }
+                else
+                {
+                    var piece = CharToPiece[ch];
+                    Debug.Assert(piece != null);
+                    if (promotion)
+                    {
+                        piece = piece.ToPromoted();
+                        promotion = false;
+                    }
+                    Board[file--, rank] = piece;
+                }
+            }
+
+            // 手番
+            var sideToMove = sfen[index++];
+            Debug.Assert(sideToMove == 'b' || sideToMove == 'w');
+            if (sideToMove == 'b')
+            {
+                SideToMove = Color.Black;
+            }
+            else
+            {
+                SideToMove = Color.White;
+            }
+            ++index;
+
+            while (true)
+            {
+                var ch = sfen[index++];
+                if (ch == ' ')
+                {
+                    break;
+                }
+
+                var piece = CharToPiece[ch];
+                Debug.Assert(piece != null);
+                ++HandPieces[(int)piece];
+            }
+
+            Ply = int.Parse(sfen.Substring(index));
+        }
+
+        private static Piece[] CharToPiece = new Piece[128];
     }
 }
