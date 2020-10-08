@@ -313,7 +313,7 @@ namespace RocketTanuki
                             }
 
                             var pieceTo = board[fileTo, rankTo];
-                            if (pieceTo != Piece.NoPiece && pieceTo.ToColor() != sideToMove)
+                            if (pieceTo != Piece.NoPiece && pieceTo.ToColor() == sideToMove)
                             {
                                 // 味方の駒がいる
                                 break;
