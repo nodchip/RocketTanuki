@@ -184,7 +184,7 @@ namespace RocketTanuki
             for (int rank = 0; rank < BoardSize; ++rank)
             {
                 writer.Write("|");
-                for (int file = 0; file < BoardSize; ++file)
+                for (int file = BoardSize - 1; file >= 0; --file)
                 {
                     writer.Write(PieceToString[(int)Board[file, rank]]);
                     writer.Write("|");
