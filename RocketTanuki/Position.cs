@@ -13,13 +13,14 @@ namespace RocketTanuki
     /// <summary>
     /// 局面を表すデータ構造
     /// </summary>
-    class Position
+    public class Position
     {
         public const int BoardSize = 9;
         public Color SideToMove { get; set; }
         public Piece[,] Board { get; } = new Piece[BoardSize, BoardSize];
         public int[] HandPieces { get; } = new int[(int)Piece.NumPieces];
         public int Ply { get; set; }
+        public const string StartposSfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
 
         public static void Initialize()
         {

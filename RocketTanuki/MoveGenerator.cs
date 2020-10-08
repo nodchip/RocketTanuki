@@ -11,7 +11,7 @@ namespace RocketTanuki
     /// <summary>
     /// 指し手生成ルーチン
     /// </summary>
-    static class MoveGenerator
+    public static class MoveGenerator
     {
         class Direction
         {
