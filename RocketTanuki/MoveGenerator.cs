@@ -387,6 +387,13 @@ namespace RocketTanuki
                             continue;
                         }
 
+                        if ((pieceFrom == Piece.BlackPawn || pieceFrom == Piece.WhitePawn)
+                            && IsPawnExist(board, fileTo, pieceFrom))
+                        {
+                            // 2歩
+                            continue;
+                        }
+
                         // 駒打ち
                         yield return new Move
                         {
@@ -419,6 +426,18 @@ namespace RocketTanuki
                 || (pieceFrom == Piece.WhiteLance && rankTo <= 7)
                 || (pieceFrom == Piece.WhiteKnight && rankTo <= 6)
                 || (pieceFrom != Piece.BlackPawn && pieceFrom != Piece.BlackLance && pieceFrom != Piece.BlackKnight && pieceFrom != Piece.WhitePawn && pieceFrom != Piece.WhiteLance && pieceFrom != Piece.WhiteKnight);
+        }
+
+        private static bool IsPawnExist(Piece[,] board, int file, Piece pawn)
+        {
+            for (int rank = 0; rank < Position.BoardSize; ++rank)
+            {
+                if (board[file, rank] == pawn)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
