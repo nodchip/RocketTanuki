@@ -40,6 +40,9 @@ namespace RocketTanuki
                         Console.WriteLine("readyok");
                         break;
 
+                    case "usinewgame":
+                        break;
+
                     default:
                         Console.WriteLine($"info string Unsupported command: command={command}");
                         break;
