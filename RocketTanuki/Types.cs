@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace RocketTanuki
 {
-    enum Color
+    public enum Color
     {
         Black,
         White,
     }
 
-    enum Piece
+    public enum Piece
     {
         NoPiece,
         BlackPawn,
@@ -51,7 +51,7 @@ namespace RocketTanuki
     /// <summary>
     /// 各種型のユーティリティ関数
     /// </summary>
-    static class Types
+    public static class Types
     {
         public static void Initialize()
         {

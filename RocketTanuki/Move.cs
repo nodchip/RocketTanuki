@@ -10,7 +10,7 @@ namespace RocketTanuki
     /// <summary>
     /// 指し手を表すデータ構造
     /// </summary>
-    class Move
+    public class Move
     {
         public int FileFrom { get; set; }
         public int RankFrom { get; set; }

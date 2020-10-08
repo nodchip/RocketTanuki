@@ -6,12 +6,17 @@ using System.Threading.Tasks;
 
 namespace RocketTanuki
 {
-    class Program
+    public class Program
     {
-        void Run()
+        public static void Initialize()
         {
             Position.Initialize();
             Types.Initialize();
+        }
+
+        void Run()
+        {
+            Initialize();
 
             var position = new Position();
             // 平手
