@@ -38,10 +38,12 @@ namespace RocketTanuki
                         Console.WriteLine("id name Rocket Tanuki");
                         Console.WriteLine("id author nodchip");
                         Console.WriteLine("usiok");
+                        Console.Out.Flush();
                         break;
 
                     case "isready":
                         Console.WriteLine("readyok");
+                        Console.Out.Flush();
                         break;
 
                     case "usinewgame":
@@ -90,8 +92,14 @@ namespace RocketTanuki
 
                         break;
 
+                    case "go":
+                        Console.WriteLine("bestmove resign");
+                        Console.Out.Flush();
+                        break;
+
                     default:
                         Console.WriteLine($"info string Unsupported command: command={command}");
+                        Console.Out.Flush();
                         break;
                 }
             }
