@@ -20,6 +20,7 @@ namespace RocketTanuki
             Initialize();
 
             var options = new Dictionary<string, string>();
+            var position = new Position();
 
             string line;
             while ((line = Console.ReadLine()) != null)
@@ -47,11 +48,46 @@ namespace RocketTanuki
                         break;
 
                     case "setoption":
+                        Debug.Assert(split.Length == 5);
                         Debug.Assert(split[1] == "name");
                         Debug.Assert(split[3] == "value");
                         var id = split[2];
                         var x = split[4];
                         options.Add(id, x);
+                        break;
+
+                    case "position":
+                        Debug.Assert(split.Length >= 2);
+                        Debug.Assert(split[1] == "sfen" || split[1] == "startpos");
+                        int nextIndex;
+                        if (split[1] == "sfen")
+                        {
+                            Debug.Assert(command.Length >= 6);
+                            var sfen = string.Join(" ", split.Skip(2).Take(4));
+                            position.Set(sfen);
+                            nextIndex = 6;
+                        }
+                        else if (split[1] == "startpos")
+                        {
+                            position.Set(Position.StartposSfen);
+                            nextIndex = 2;
+                        }
+                        else
+                        {
+                            throw new Exception($"不正なpositionコマンドを受信しました。 line={line}");
+                        }
+
+                        foreach (var moveString in split.Skip(nextIndex))
+                        {
+                            if (moveString == "moves")
+                            {
+                                continue;
+                            }
+
+                            var move = Move.FromUsiString(position, moveString);
+                            position.DoMove(move);
+                        }
+
                         break;
 
                     default:

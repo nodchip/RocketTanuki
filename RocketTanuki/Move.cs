@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,6 +45,34 @@ namespace RocketTanuki
             }
 
             return usiString;
+        }
+
+        public static Move FromUsiString(Position position, string moveString)
+        {
+            var move = new Move();
+            if (moveString[1] == '*')
+            {
+                // 駒打ちの指し手
+                move.FileFrom = -1;
+                move.RankFrom = -1;
+                move.PieceFrom = CharToPiece[moveString[0]];
+                move.Drop = true;
+            }
+            else
+            {
+                // 駒を移動する指し手
+                move.FileFrom = moveString[0] - '1';
+                move.RankFrom = moveString[1] - 'a';
+                move.PieceFrom = position.Board[move.FileFrom, move.RankFrom];
+                move.Drop = false;
+            }
+
+            move.FileTo = moveString[2] - '1';
+            move.RankTo = moveString[3] - 'a';
+            move.PieceTo = position.Board[move.FileTo, move.RankTo];
+
+            move.Promotion = moveString.Length == 5;
+            return move;
         }
     }
 }
