@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ namespace RocketTanuki
         void Run()
         {
             Initialize();
+
+            var options = new Dictionary<string, string>();
 
             string line;
             while ((line = Console.ReadLine()) != null)
@@ -41,6 +44,14 @@ namespace RocketTanuki
                         break;
 
                     case "usinewgame":
+                        break;
+
+                    case "setoption":
+                        Debug.Assert(split[1] == "name");
+                        Debug.Assert(split[3] == "value");
+                        var id = split[2];
+                        var x = split[4];
+                        options.Add(id, x);
                         break;
 
                     default:
