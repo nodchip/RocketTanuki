@@ -336,7 +336,10 @@ namespace RocketTanuki
                             }
 
                             if (pieceFrom.CanPromote() &&
-                                ((sideToMove == Color.Black && rankTo <= 2) || (sideToMove == Color.White && rankTo >= 6)))
+                                ((sideToMove == Color.Black && rankTo <= 2)
+                                || (sideToMove == Color.White && rankTo >= 6)
+                                || (sideToMove == Color.Black && rankFrom <= 2)
+                                || (sideToMove == Color.White && rankFrom >= 6)))
                             {
                                 // 成って移動する
                                 yield return new Move
@@ -403,7 +406,7 @@ namespace RocketTanuki
                             FileTo = fileTo,
                             RankTo = rankTo,
                             PieceTo = Piece.NoPiece,
-                            Drop = false,
+                            Drop = true,
                             Promotion = false,
                         };
                     }

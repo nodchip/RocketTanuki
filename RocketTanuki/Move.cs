@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static RocketTanuki.Types;
 
 namespace RocketTanuki
 {
@@ -19,5 +20,30 @@ namespace RocketTanuki
         public Piece PieceTo { get; set; }
         public bool Drop { get; set; }
         public bool Promotion { get; set; }
+
+        public string ToUsiString()
+        {
+            string usiString = "";
+            if (Drop)
+            {
+                usiString += char.ToUpper(PieceToChar[(int)PieceFrom]);
+                usiString += "*";
+            }
+            else
+            {
+                usiString += (char)(FileFrom + '1');
+                usiString += (char)(RankFrom + 'a');
+            }
+
+            usiString += (char)(FileTo + '1');
+            usiString += (char)(RankTo + 'a');
+
+            if (Promotion)
+            {
+                usiString += "+";
+            }
+
+            return usiString;
+        }
     }
 }

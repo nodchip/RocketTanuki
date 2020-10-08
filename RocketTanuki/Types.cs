@@ -67,6 +67,40 @@ namespace RocketTanuki
             NonPromotedToPromoted[(int)Piece.WhiteSilver] = Piece.WhitePromotedSilver;
             NonPromotedToPromoted[(int)Piece.WhiteBishop] = Piece.WhiteHorse;
             NonPromotedToPromoted[(int)Piece.WhiteRook] = Piece.WhiteDragon;
+
+            CharToPiece['K'] = Piece.BlackKing;
+            CharToPiece['k'] = Piece.WhiteKing;
+            CharToPiece['R'] = Piece.BlackRook;
+            CharToPiece['r'] = Piece.WhiteRook;
+            CharToPiece['B'] = Piece.BlackBishop;
+            CharToPiece['b'] = Piece.WhiteBishop;
+            CharToPiece['G'] = Piece.BlackGold;
+            CharToPiece['g'] = Piece.WhiteGold;
+            CharToPiece['S'] = Piece.BlackSilver;
+            CharToPiece['s'] = Piece.WhiteSilver;
+            CharToPiece['N'] = Piece.BlackKnight;
+            CharToPiece['n'] = Piece.WhiteKnight;
+            CharToPiece['L'] = Piece.BlackLance;
+            CharToPiece['l'] = Piece.WhiteLance;
+            CharToPiece['P'] = Piece.BlackPawn;
+            CharToPiece['p'] = Piece.WhitePawn;
+
+            PieceToChar[(int)Piece.BlackKing] = 'K';
+            PieceToChar[(int)Piece.WhiteKing] = 'k';
+            PieceToChar[(int)Piece.BlackRook] = 'R';
+            PieceToChar[(int)Piece.WhiteRook] = 'r';
+            PieceToChar[(int)Piece.BlackBishop] = 'B';
+            PieceToChar[(int)Piece.WhiteBishop] = 'b';
+            PieceToChar[(int)Piece.BlackGold] = 'G';
+            PieceToChar[(int)Piece.WhiteGold] = 'g';
+            PieceToChar[(int)Piece.BlackSilver] = 'S';
+            PieceToChar[(int)Piece.WhiteSilver] = 's';
+            PieceToChar[(int)Piece.BlackKnight] = 'N';
+            PieceToChar[(int)Piece.WhiteKnight] = 'n';
+            PieceToChar[(int)Piece.BlackLance] = 'L';
+            PieceToChar[(int)Piece.WhiteLance] = 'l';
+            PieceToChar[(int)Piece.BlackPawn] = 'P';
+            PieceToChar[(int)Piece.WhitePawn] = 'p';
         }
 
         /// <summary>
@@ -147,5 +181,9 @@ namespace RocketTanuki
             Piece.BlackRook,
             Piece.NumPieces,
         };
+
+        public static Piece[] CharToPiece { get; } = new Piece[128];
+
+        public static char[] PieceToChar { get; } = new char[(int)Piece.NumPieces];
     }
 }

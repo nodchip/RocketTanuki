@@ -23,22 +23,6 @@ namespace RocketTanuki
 
         public static void Initialize()
         {
-            CharToPiece['K'] = Piece.BlackKing;
-            CharToPiece['k'] = Piece.WhiteKing;
-            CharToPiece['R'] = Piece.BlackRook;
-            CharToPiece['r'] = Piece.WhiteRook;
-            CharToPiece['B'] = Piece.BlackBishop;
-            CharToPiece['b'] = Piece.WhiteBishop;
-            CharToPiece['G'] = Piece.BlackGold;
-            CharToPiece['g'] = Piece.WhiteGold;
-            CharToPiece['S'] = Piece.BlackSilver;
-            CharToPiece['s'] = Piece.WhiteSilver;
-            CharToPiece['N'] = Piece.BlackKnight;
-            CharToPiece['n'] = Piece.WhiteKnight;
-            CharToPiece['L'] = Piece.BlackLance;
-            CharToPiece['l'] = Piece.WhiteLance;
-            CharToPiece['P'] = Piece.BlackPawn;
-            CharToPiece['p'] = Piece.WhitePawn;
         }
 
         /// <summary>
@@ -220,7 +204,6 @@ namespace RocketTanuki
             return writer.ToString();
         }
 
-        private static Piece[] CharToPiece = new Piece[128];
         private static String[] PieceToString = new[]
         {
             "　　",
