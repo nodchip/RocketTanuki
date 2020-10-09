@@ -29,7 +29,7 @@ namespace RocketTanuki
 
         public static int MatedIn(int play)
         {
-            return MatedInMaxPlayValue + play;
+            return -MateValue + play;
         }
 
         public const int ZeroValue = 0;
