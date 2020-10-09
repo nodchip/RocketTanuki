@@ -32,22 +32,27 @@ namespace RocketTanuki
         /// <param name="move"></param>
         public void DoMove(Move move)
         {
+            Debug.Assert(SideToMove == move.SideToMove);
             Debug.Assert(move.Drop || Board[move.FileFrom, move.RankFrom] == move.PieceFrom);
             Debug.Assert(move.Drop || Board[move.FileTo, move.RankTo] == move.PieceTo);
 
             // 相手の駒を取る
             if (move.PieceTo != Piece.NoPiece)
             {
+                Debug.Assert(move.PieceTo.ToColor() != SideToMove);
+                Debug.Assert(move.PieceTo.ToOpponentsHandPiece().ToColor() == SideToMove);
                 ++HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()];
             }
 
             Board[move.FileTo, move.RankTo] = move.Promotion
                 ? Types.ToPromoted(move.PieceFrom)
                 : move.PieceFrom;
+            Debug.Assert(Board[move.FileTo, move.RankTo].ToColor() == SideToMove);
 
             if (move.Drop)
             {
                 // 駒を打つ指し手
+                Debug.Assert(move.PieceFrom.ToColor() == SideToMove);
                 Debug.Assert(HandPieces[(int)move.PieceFrom] > 0);
                 --HandPieces[(int)move.PieceFrom];
             }
@@ -66,16 +71,20 @@ namespace RocketTanuki
         /// <param name="move"></param>
         public void UndoMove(Move move)
         {
+            Debug.Assert(SideToMove != move.SideToMove);
+
             SideToMove = SideToMove.ToOpponent();
 
             if (move.Drop)
             {
                 // 駒を打つ指し手
+                Debug.Assert(move.PieceFrom.ToColor() == SideToMove);
                 ++HandPieces[(int)move.PieceFrom];
             }
             else
             {
                 // 駒を移動する指し手
+                Debug.Assert(move.PieceFrom.ToColor() == SideToMove);
                 Board[move.FileFrom, move.RankFrom] = move.PieceFrom;
             }
 
@@ -84,6 +93,7 @@ namespace RocketTanuki
             // 相手の駒を取る
             if (move.PieceTo != Piece.NoPiece)
             {
+                Debug.Assert(move.PieceTo.ToColor() != SideToMove);
                 Debug.Assert(HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()] > 0);
                 --HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()];
             }
@@ -95,6 +105,7 @@ namespace RocketTanuki
         /// <param name="sfen"></param>
         public void Set(string sfen)
         {
+            // 盤面
             int file = BoardSize - 1;
             int rank = 0;
             int index = 0;
@@ -150,6 +161,11 @@ namespace RocketTanuki
             }
             ++index;
 
+            // 持ち駒
+            for (int handPieceIndex = 0; handPieceIndex < (int)Piece.NumPieces; ++handPieceIndex)
+            {
+                HandPieces[handPieceIndex] = 0;
+            }
             while (true)
             {
                 var ch = sfen[index++];
