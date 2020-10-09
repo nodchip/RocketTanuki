@@ -17,6 +17,8 @@ namespace RocketTanuki
 
         void Run()
         {
+            //Debugger.Launch();
+
             Initialize();
 
             var options = new Dictionary<string, string>();
@@ -90,12 +92,73 @@ namespace RocketTanuki
                             position.DoMove(move);
                         }
 
+                        Console.WriteLine(position);
+
                         break;
 
                     case "go":
-                        Console.WriteLine("bestmove resign");
-                        Console.Out.Flush();
+                        bool ponder = false;
+                        int btime = 0;
+                        int wtime = 0;
+                        int byoyomi = 0;
+                        int binc = 0;
+                        int winc = 0;
+                        bool infinite = false;
+                        for (int index = 1; index < split.Length; ++index)
+                        {
+                            var option = split[index];
+                            switch (option)
+                            {
+                                case "ponder":
+                                    ponder = true;
+                                    break;
+
+                                case "btime":
+                                    btime = int.Parse(split[++index]);
+                                    break;
+
+                                case "wtime":
+                                    wtime = int.Parse(split[++index]);
+                                    break;
+
+                                case "byoyomi":
+                                    byoyomi = int.Parse(split[++index]);
+                                    break;
+
+                                case "binc":
+                                    binc = int.Parse(split[++index]);
+                                    break;
+
+                                case "winc":
+                                    winc = int.Parse(split[++index]);
+                                    break;
+
+                                case "infinite":
+                                    infinite = true;
+                                    break;
+
+                                default:
+                                    throw new Exception($"Unsupported go option: option={option}");
+                            }
+                        }
+
+                        TimeManager.Instance.Start(ponder, btime, wtime, byoyomi, binc, winc, infinite, position.SideToMove);
+                        Searchers.Instance.Start(position);
                         break;
+
+                    case "stop":
+                        Searchers.Instance.Stop();
+                        break;
+
+                    case "ponderhit":
+                        TimeManager.Instance.PonderHit();
+                        break;
+
+                    case "quit":
+                        Searchers.Instance.Stop();
+                        Searchers.Instance.WaitAllSearchTasks();
+                        Searchers.Instance.WaitSearchTask();
+                        return;
 
                     default:
                         Console.WriteLine($"info string Unsupported command: command={command}");

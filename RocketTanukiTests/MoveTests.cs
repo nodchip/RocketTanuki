@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RocketTanuki;
 
@@ -65,6 +66,33 @@ namespace RocketTanukiTests
             };
 
             Assert.AreEqual("P*2b", move.ToUsiString());
+        }
+
+        [TestMethod]
+        public void FromUsiString_DropMove()
+        {
+            var position = new Position();
+            position.Set(Position.StartposSfen);
+            foreach (var moveString in new[] { "5i4h", "4a3b", "1g1f", "6a5b", "1f1e", "5a4b", "1e1d", "1c1d", "1i1h", "1d1e", "1h1g", "1e1f", "1g1f" })
+            {
+                var move = Move.FromUsiString(position, moveString);
+                position.DoMove(move);
+            }
+
+            var expected = new Move
+            {
+                FileFrom = -1,
+                RankFrom = -1,
+                PieceFrom = Piece.WhitePawn,
+                FileTo = 0,
+                RankTo = 4,
+                PieceTo = Piece.NoPiece,
+                Drop = true,
+                Promotion = false,
+                SideToMove = Color.White,
+            };
+
+            Assert.AreEqual(expected, Move.FromUsiString(position, "P*1e"));
         }
     }
 }

@@ -43,12 +43,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BestMove.cs" />
+    <Compile Include="Evaluator.cs" />
+    <Compile Include="Mover.cs" />
+    <Compile Include="Searcher.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="MoveGenerator.cs" />
     <Compile Include="Position.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Searchers.cs" />
+    <Compile Include="TimeManager.cs" />
     <Compile Include="Types.cs" />
+    <Compile Include="Usi.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

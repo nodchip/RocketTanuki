@@ -56,6 +56,8 @@ namespace RocketTanuki
                 // 駒を移動する指し手
                 Board[move.FileFrom, move.RankFrom] = Piece.NoPiece;
             }
+
+            SideToMove = SideToMove.ToOpponent();
         }
 
         /// <summary>
@@ -64,6 +66,8 @@ namespace RocketTanuki
         /// <param name="move"></param>
         public void UndoMove(Move move)
         {
+            SideToMove = SideToMove.ToOpponent();
+
             if (move.Drop)
             {
                 // 駒を打つ指し手
@@ -80,7 +84,7 @@ namespace RocketTanuki
             // 相手の駒を取る
             if (move.PieceTo != Piece.NoPiece)
             {
-                Debug.Assert(HandPieces[(int)move.PieceTo] > 0);
+                Debug.Assert(HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()] > 0);
                 --HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()];
             }
         }
@@ -205,38 +209,81 @@ namespace RocketTanuki
             return writer.ToString();
         }
 
-        private static String[] PieceToString = new[]
+        public bool IsChecked(Color color)
         {
-            "　　",
-            " 歩 ",
-            " 香 ",
-            " 桂 ",
-            " 銀 ",
-            " 金 ",
-            " 角 ",
-            " 飛 ",
-            " 王 ",
-            " と ",
-            " 杏 ",
-            " 圭 ",
-            " 全 ",
-            " 馬 ",
-            " 龍 ",
-            "歩↓",
-            "香↓",
-            "桂↓",
-            "銀↓",
-            "金↓",
-            "角↓",
-            "飛↓",
-            "王↓",
-            "と↓",
-            "杏↓",
-            "圭↓",
-            "全↓",
-            "馬↓",
-            "龍↓",
-            null,
-        };
+            var king = color == Color.Black ? Piece.BlackKing : Piece.WhiteKing;
+            FindPiece(king, out int file, out int rank);
+
+            // 駒を移動する指し手
+            for (int fileFrom = 0; fileFrom < Position.BoardSize; ++fileFrom)
+            {
+                for (int rankFrom = 0; rankFrom < Position.BoardSize; ++rankFrom)
+                {
+                    var pieceFrom = Board[fileFrom, rankFrom];
+                    if (pieceFrom == Piece.NoPiece)
+                    {
+                        // 駒が置かれていないので何もしない
+                        continue;
+                    }
+
+                    if (pieceFrom.ToColor() == color)
+                    {
+                        // 味方の駒なので何もしない
+                        continue;
+                    }
+
+                    foreach (var moveDirection in MoveDirections[(int)pieceFrom])
+                    {
+                        int maxDistance = moveDirection.Long ? 8 : 1;
+                        int fileTo = fileFrom;
+                        int rankTo = rankFrom;
+                        for (int distance = 0; distance < maxDistance; ++distance)
+                        {
+                            fileTo += moveDirection.Direction.DeltaFile;
+                            rankTo += moveDirection.Direction.DeltaRank;
+
+                            if (fileTo < 0 || Position.BoardSize <= fileTo || rankTo < 0 || Position.BoardSize <= rankTo)
+                            {
+                                // 盤外
+                                continue;
+                            }
+
+                            var pieceTo = Board[fileTo, rankTo];
+                            if (pieceTo == king)
+                            {
+                                // 味方の玉に利きを持っている
+                                return true;
+                            }
+
+                            if (pieceTo != Piece.NoPiece)
+                            {
+                                // 味方の玉以外の駒がある
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private void FindPiece(Piece piece, out int file, out int rank)
+        {
+            for (int f = 0; f < BoardSize; ++f)
+            {
+                for (int r = 0; r < BoardSize; ++r)
+                {
+                    if (Board[f, r] == piece)
+                    {
+                        file = f;
+                        rank = r;
+                        return;
+                    }
+                }
+            }
+
+            throw new Exception($"Piece not found. piece={piece}");
+        }
     }
 }
