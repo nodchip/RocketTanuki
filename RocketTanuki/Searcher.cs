@@ -25,8 +25,12 @@ namespace RocketTanuki
 
             for (int depth = 1; depth < MaxPlay && Searchers.Instance.thinking; ++depth)
             {
-                bestMove = search(position, -MateValue, MateValue, depth);
-                bestMove.Depth = depth;
+                BestMove bestMoveCandidate = search(position, -MateValue, MateValue, depth);
+                if (Searchers.Instance.thinking)
+                {
+                    bestMove = bestMoveCandidate;
+                    bestMove.Depth = depth;
+                }
 
                 Usi.OutputPv(bestMove);
             }

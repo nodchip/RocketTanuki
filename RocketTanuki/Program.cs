@@ -57,7 +57,7 @@ namespace RocketTanuki
                         Debug.Assert(split[3] == "value");
                         var id = split[2];
                         var x = split[4];
-                        options.Add(id, x);
+                        options[id] = x;
                         break;
 
                     case "position":
@@ -91,8 +91,6 @@ namespace RocketTanuki
                             var move = Move.FromUsiString(position, moveString);
                             position.DoMove(move);
                         }
-
-                        Console.WriteLine(position);
 
                         break;
 
@@ -159,6 +157,10 @@ namespace RocketTanuki
                         Searchers.Instance.WaitAllSearchTasks();
                         Searchers.Instance.WaitSearchTask();
                         return;
+
+                    case "d":
+                        Console.WriteLine(position);
+                        break;
 
                     default:
                         Console.WriteLine($"info string Unsupported command: command={command}");
