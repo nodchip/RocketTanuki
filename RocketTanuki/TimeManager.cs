@@ -37,6 +37,7 @@ namespace RocketTanuki
 
         public void PonderHit()
         {
+            timeConsumptionStartTime = DateTime.Now;
             CalculateEndTime();
             ponder = false;
         }
