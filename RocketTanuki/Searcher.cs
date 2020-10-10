@@ -123,6 +123,7 @@ namespace RocketTanuki
 
             BestMove bestChildBestMove = null;
             Move bestMove = Move.Resign;
+            bool searchPv = true;
             foreach (var move in MoveGenerator.Generate(position))
             {
                 if (!Searchers.Instance.thinking)
@@ -139,7 +140,18 @@ namespace RocketTanuki
                         continue;
                     }
 
-                    childBestMove = search(position, -beta, -alpha, depth - 1);
+                    if (searchPv)
+                    {
+                        childBestMove = search(position, -beta, -alpha, depth - 1);
+                    }
+                    else
+                    {
+                        childBestMove = search(position, -alpha - 1, -alpha, depth - 1);
+                        if (-childBestMove.Value > alpha)
+                        {
+                            childBestMove = search(position, -beta, -alpha, depth - 1);
+                        }
+                    }
                 }
 
                 if (-childBestMove.Value >= beta)
@@ -157,6 +169,7 @@ namespace RocketTanuki
                     alpha = -childBestMove.Value; // alpha acts like max in MiniMax
                     bestMove = move;
                     bestChildBestMove = childBestMove;
+                    searchPv = false;
                 }
             }
 
