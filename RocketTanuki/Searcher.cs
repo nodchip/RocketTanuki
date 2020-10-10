@@ -41,7 +41,7 @@ namespace RocketTanuki
                 BestMove bestMoveCandidate;
                 while (true)
                 {
-                    bestMoveCandidate = search(position, alpha, beta, depth);
+                    bestMoveCandidate = search(position, alpha, beta, depth, 0);
                     bestMoveCandidate.Depth = depth;
                     if ((bestMoveCandidate.Value <= alpha || beta <= bestMoveCandidate.Value)
                         && TimeManager.Instance.ElapsedMs() > 3000)
@@ -85,14 +85,15 @@ namespace RocketTanuki
         }
 
         /// <summary>
-        /// Alpha-Beta - Chessprogramming wiki https://www.chessprogramming.org/Alpha-Beta
+        /// Principal Variation Search - Chessprogramming wiki https://www.chessprogramming.org/Principal_Variation_Search
         /// </summary>
         /// <param name="position"></param>
         /// <param name="alpha"></param>
         /// <param name="beta"></param>
         /// <param name="depth"></param>
+        /// <param name="playFromRootNode">Root局面からの手数</param>
         /// <returns></returns>
-        private BestMove search(Position position, int alpha, int beta, int depth)
+        private BestMove search(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
             if (!Searchers.Instance.thinking)
             {
@@ -121,6 +122,16 @@ namespace RocketTanuki
                 };
             }
 
+            var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
+            if (found)
+            {
+                return new BestMove
+                {
+                    Value = FromTranspositionTableValue(transpositionTableEntry.Value, playFromRootNode),
+                    Move = Move.FromUshort(position, transpositionTableEntry.Move),
+                };
+            }
+
             BestMove bestChildBestMove = null;
             Move bestMove = Move.Resign;
             bool searchPv = true;
@@ -142,14 +153,14 @@ namespace RocketTanuki
 
                     if (searchPv)
                     {
-                        childBestMove = search(position, -beta, -alpha, depth - 1);
+                        childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                     }
                     else
                     {
-                        childBestMove = search(position, -alpha - 1, -alpha, depth - 1);
+                        childBestMove = search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
                         if (-childBestMove.Value > alpha)
                         {
-                            childBestMove = search(position, -beta, -alpha, depth - 1);
+                            childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                         }
                     }
                 }
@@ -173,29 +184,65 @@ namespace RocketTanuki
                 }
             }
 
-            var result = new BestMove
+            int value = bestMove == Move.Resign
+                // 合法手が存在しなかった=負け
+                ? MatedIn(playFromRootNode)
+                : alpha;
+
+            TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(value, playFromRootNode), depth, bestMove);
+
+            return new BestMove
             {
                 Move = bestMove,
                 Next = bestChildBestMove,
+                Value = value,
             };
-            if (bestMove == Move.Resign)
+        }
+
+        /// <summary>
+        /// 探索における評価値(詰みの局面はMax-Root局面からの手数)を
+        /// 置換表における評価値(詰みの局面はMax-現局面からの手数)に変換する。
+        /// </summary>
+        /// <param name="searchValue">探索の評価値</param>
+        /// <param name="playFromRootNode">Root局面からの手数</param>
+        /// <returns></returns>
+        private int ToTranspositionTableValue(int searchValue, int playFromRootNode)
+        {
+            if (searchValue < MatedInMaxPlayValue)
             {
-                // 合法手が存在しなかった=負け
-                result.Value = MatedIn(1);
+                return searchValue + playFromRootNode;
             }
-            else if (alpha < MatedInMaxPlayValue)
+            else if (searchValue > MateInMaxPlayValue)
             {
-                result.Value = alpha + 1;
-            }
-            else if (MateInMaxPlayValue < alpha)
-            {
-                result.Value = alpha - 1;
+                return searchValue - playFromRootNode;
             }
             else
             {
-                result.Value = alpha;
+                return searchValue;
             }
-            return result;
+        }
+
+        /// <summary>
+        /// 置換表における評価値(詰みの局面はMax-現局面からの手数)を
+        /// 探索における評価値(詰みの局面はMax-Root局面からの手数)に変換する。
+        /// </summary>
+        /// <param name="searchValue">探索の評価値</param>
+        /// <param name="playFromRootNode">Root局面からの手数</param>
+        /// <returns></returns>
+        private int FromTranspositionTableValue(int searchValue, int playFromRootNode)
+        {
+            if (searchValue < MatedInMaxPlayValue)
+            {
+                return searchValue - playFromRootNode;
+            }
+            else if (searchValue > MateInMaxPlayValue)
+            {
+                return searchValue + playFromRootNode;
+            }
+            else
+            {
+                return searchValue;
+            }
         }
 
         private int threadId;

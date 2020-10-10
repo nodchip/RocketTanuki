@@ -22,11 +22,21 @@ namespace RocketTanuki
             return position.SideToMove == Color.Black ? value : -value;
         }
 
+        /// <summary>
+        /// 詰みのスコアを返す。
+        /// </summary>
+        /// <param name="play">Rootノードからの手数</param>
+        /// <returns></returns>
         public static int MateIn(int play)
         {
             return MateValue - play;
         }
 
+        /// <summary>
+        /// 待たされたときのスコアを返す。
+        /// </summary>
+        /// <param name="play">Rootノードからの手数</param>
+        /// <returns></returns>
         public static int MatedIn(int play)
         {
             return -MateValue + play;

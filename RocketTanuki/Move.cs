@@ -139,6 +139,49 @@ namespace RocketTanuki
             return move;
         }
 
+        /// <summary>
+        /// 16ビット整数形式に変換する。
+        /// </summary>
+        /// <returns></returns>
+        public ushort ToUshort()
+        {
+            // 0...6ビット目: 移動先のマス
+            // 7...13ビット目: 駒を移動する指し手の場合は移動元のマス、駒を打つ指し手の場合はPiece
+            // 14ビット目: 駒を移動する指し手の場合は0、駒を打つ指し手の場合は1
+            // 15ビット目: 駒を成る指し手の場合は1、それ以外は0
+            int to = FileTo + RankTo * Position.BoardSize;
+            int from = Drop ? (int)PieceFrom : FileFrom + RankFrom * Position.BoardSize;
+            int drop = Drop ? 1 : 0;
+            int promotion = Promotion ? 1 : 0;
+            return (ushort)(to | (from << 7) | (drop << 14) | (promotion << 15));
+        }
+
+        /// <summary>
+        /// 16ビット整数形式から復元する。
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="move16"></param>
+        /// <returns></returns>
+        public static Move FromUshort(Position position, ushort move16)
+        {
+            int to = move16 & ((1 << 7) - 1);
+            int from = (move16 >> 7) & ((1 << 7) - 1);
+            int drop = (move16 >> 14) & 1;
+            int promotion = (move16 >> 15) & 1;
+            return new Move
+            {
+                FileFrom = drop == 1 ? -1 : from % 9,
+                RankFrom = drop == 1 ? -1 : from / 9,
+                PieceFrom = drop == 1 ? (Piece)from : position.Board[from % 9, from / 9],
+                FileTo = to % 9,
+                RankTo = to / 9,
+                PieceTo = position.Board[to % 9, to / 9],
+                Drop = drop == 1,
+                Promotion = promotion == 1,
+                SideToMove = position.SideToMove,
+            };
+        }
+
         public static Move Resign = new Move();
         public static Move Win = new Move();
         private static string[] RankToKanjiLetters = { "一", "二", "三", "四", "五", "六", "七", "八", "九" };

@@ -9,6 +9,9 @@ namespace RocketTanuki
 {
     public class Program
     {
+        private const string USI_Ponder = "USI_Ponder";
+        private const string USI_Hash = "USI_Hash";
+
         public static void Initialize()
         {
             Position.Initialize();
@@ -44,6 +47,7 @@ namespace RocketTanuki
                         break;
 
                     case "isready":
+                        TranspositionTable.Instance.Resize(int.Parse(options[USI_Hash]));
                         Console.WriteLine("readyok");
                         Console.Out.Flush();
                         break;

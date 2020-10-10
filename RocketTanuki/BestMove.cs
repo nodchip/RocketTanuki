@@ -9,11 +9,6 @@ namespace RocketTanuki
     public class BestMove
     {
         /// <summary>
-        /// PVが逆順で格納されている
-        /// </summary>
-        public List<Move> PrincipalVariation { get; set; }
-
-        /// <summary>
         /// 探索込みの評価値
         /// </summary>
         public int Value { get; set; }
