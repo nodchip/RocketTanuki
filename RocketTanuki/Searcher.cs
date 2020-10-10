@@ -123,7 +123,7 @@ namespace RocketTanuki
             }
 
             var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
-            if (found)
+            if (found && depth <= transpositionTableEntry.Depth)
             {
                 return new BestMove
                 {
@@ -135,7 +135,8 @@ namespace RocketTanuki
             BestMove bestChildBestMove = null;
             Move bestMove = Move.Resign;
             bool searchPv = true;
-            foreach (var move in MoveGenerator.Generate(position, found ? Move.FromUshort(position, transpositionTableEntry.Move) : null))
+            Move transpositionTableMove = found ? Move.FromUshort(position, transpositionTableEntry.Move) : null;
+            foreach (var move in MoveGenerator.Generate(position, transpositionTableMove))
             {
                 if (!Searchers.Instance.thinking)
                 {
@@ -189,7 +190,12 @@ namespace RocketTanuki
                 ? MatedIn(playFromRootNode)
                 : alpha;
 
-            TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(value, playFromRootNode), depth, bestMove);
+            // Null Window Search等で指し手が見つからなかった場合に
+            // 投了の指し手を置換表に登録していまうのを防ぐハック
+            if (bestMove != Move.Resign)
+            {
+                TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(value, playFromRootNode), depth, bestMove);
+            }
 
             return new BestMove
             {

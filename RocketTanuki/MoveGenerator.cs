@@ -21,7 +21,10 @@ namespace RocketTanuki
         /// <returns></returns>
         public static IEnumerable<Move> Generate(Position position, Move transpositionTableMove)
         {
-            if (transpositionTableMove != null && position.IsValid(transpositionTableMove))
+            if (transpositionTableMove != null
+                && transpositionTableMove != Move.Resign
+                && transpositionTableMove != Move.Win
+                && position.IsValid(transpositionTableMove))
             {
                 yield return transpositionTableMove;
             }

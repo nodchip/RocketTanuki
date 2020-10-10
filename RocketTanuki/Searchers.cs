@@ -36,6 +36,8 @@ namespace RocketTanuki
             searchers.Clear();
             searchTasks.Clear();
 
+            TranspositionTable.Instance.NewSearch();
+
             {
                 var searcher = new Searcher(0);
                 searchers.Add(searcher);
