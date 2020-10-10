@@ -158,6 +158,9 @@ namespace RocketTanuki
                         Searchers.Instance.WaitSearchTask();
                         return;
 
+                    case "gameover":
+                        break;
+
                     case "d":
                         Console.WriteLine(position);
                         break;
