@@ -118,7 +118,7 @@ namespace RocketTanuki
                 // ゲーム木の末端に到達したので、局面を評価し、返す。
                 return new BestMove
                 {
-                    Value = Evaluate(position),
+                    Value = Evaluator.Instance.Evaluate(position),
                 };
             }
 

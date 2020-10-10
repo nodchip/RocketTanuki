@@ -9,8 +9,9 @@ namespace RocketTanuki
 {
     public class Program
     {
-        private const string USI_Ponder = "USI_Ponder";
-        private const string USI_Hash = "USI_Hash";
+        public const string USI_Ponder = "USI_Ponder";
+        public const string USI_Hash = "USI_Hash";
+        public const string EvalFile = "EvalFile";
 
         public static void Initialize()
         {
@@ -42,11 +43,13 @@ namespace RocketTanuki
                     case "usi":
                         Console.WriteLine("id name Rocket Tanuki");
                         Console.WriteLine("id author nodchip");
+                        Console.WriteLine($"option name {EvalFile} type filename default eval/nn.bin");
                         Console.WriteLine("usiok");
                         Console.Out.Flush();
                         break;
 
                     case "isready":
+                        Evaluator.Instance.Load(options);
                         TranspositionTable.Instance.Resize(int.Parse(options[USI_Hash]));
                         Console.WriteLine("readyok");
                         Console.Out.Flush();
