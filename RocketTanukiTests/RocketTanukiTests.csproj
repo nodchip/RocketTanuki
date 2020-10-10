@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="MoveGeneratorTests.cs" />
     <Compile Include="MoveTests.cs" />
+    <Compile Include="PositionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
