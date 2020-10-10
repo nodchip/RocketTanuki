@@ -324,5 +324,41 @@ namespace RocketTanuki
 
             throw new Exception($"Piece not found. piece={piece}");
         }
+
+        /// <summary>
+        /// 与えられた指し手を、現局面で指すことができるかどうか返す。
+        /// 置換表の指し手を確認することが主目的の為、細かいチェックはしていない。
+        /// </summary>
+        /// <param name="move"></param>
+        /// <returns></returns>
+        public bool IsValid(Move move)
+        {
+            if (move.Drop)
+            {
+                if (HandPieces[(int)move.PieceFrom] == 0)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (Board[move.FileFrom, move.RankFrom] != move.PieceFrom)
+                {
+                    return false;
+                }
+            }
+
+            if (Board[move.FileTo, move.RankTo] != move.PieceTo)
+            {
+                return false;
+            }
+
+            if (move.SideToMove != SideToMove)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 }

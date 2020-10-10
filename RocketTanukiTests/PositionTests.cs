@@ -16,7 +16,7 @@ namespace RocketTanukiTests
                 position.Set(sfen);
 
                 long hash = position.Hash;
-                foreach (var move in MoveGenerator.Generate(position))
+                foreach (var move in MoveGenerator.Generate(position, null))
                 {
                     using (var mover = new Mover(position, move)) { }
                     Assert.AreEqual(hash, position.Hash);

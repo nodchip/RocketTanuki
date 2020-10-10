@@ -19,7 +19,7 @@ namespace RocketTanukiTests
         {
             var position = new Position();
             position.Set(Position.StartposSfen);
-            int actual = MoveGenerator.Generate(position).ToList().Count;
+            int actual = MoveGenerator.Generate(position, null).ToList().Count;
             Assert.AreEqual(30, actual);
         }
 
@@ -28,7 +28,7 @@ namespace RocketTanukiTests
         {
             var position = new Position();
             position.Set(Position.MatsuriSfen);
-            int actual = MoveGenerator.Generate(position).ToList().Count;
+            int actual = MoveGenerator.Generate(position, null).ToList().Count;
             // 自殺手を含む。
             Assert.AreEqual(208, actual);
         }
@@ -38,7 +38,7 @@ namespace RocketTanukiTests
         {
             var position = new Position();
             position.Set(Position.MaxSfen);
-            int actual = MoveGenerator.Generate(position).ToList().Count;
+            int actual = MoveGenerator.Generate(position, null).ToList().Count;
             Assert.AreEqual(593, actual);
         }
     }

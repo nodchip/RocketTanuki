@@ -17,9 +17,15 @@ namespace RocketTanuki
         /// 指し手を生成する
         /// </summary>
         /// <param name="position"></param>
+        /// <param name="position">置換表に登録されている指し手</param>
         /// <returns></returns>
-        public static IEnumerable<Move> Generate(Position position)
+        public static IEnumerable<Move> Generate(Position position, Move transpositionTableMove)
         {
+            if (transpositionTableMove != null && position.IsValid(transpositionTableMove))
+            {
+                yield return transpositionTableMove;
+            }
+
             var sideToMove = position.SideToMove;
             var board = position.Board;
             var handPieces = position.HandPieces;
