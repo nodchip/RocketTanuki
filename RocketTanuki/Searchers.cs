@@ -61,7 +61,7 @@ namespace RocketTanuki
             }
 
             // info pvを出力する
-            Usi.OutputPv(bestMove);
+            Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue);
 
             // bestmoveを出力する
             var writer = new StringWriter();

@@ -34,7 +34,8 @@ namespace RocketTanuki
 
         public const int ZeroValue = 0;
         public const int MateValue = 32000;
-        public const int InvalidValue = 32001;
+        public const int InfiniteValue = 32001;
+        public const int InvalidValue = 32002;
         public const int MaxPlay = 128;
         public const int MateInMaxPlayValue = MateValue - MaxPlay;
         public const int MatedInMaxPlayValue = -MateValue + MaxPlay;

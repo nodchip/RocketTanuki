@@ -10,7 +10,7 @@ namespace RocketTanuki
 {
     public class Usi
     {
-        public static void OutputPv(BestMove bestMove)
+        public static void OutputPv(BestMove bestMove, int alpha, int beta)
         {
             var writer = new StringWriter();
             writer.Write("info");
@@ -43,6 +43,15 @@ namespace RocketTanuki
             {
                 writer.Write("cp ");
                 writer.Write(bestMove.Value * 100 / PawnValue);
+            }
+
+            if (bestMove.Value <= alpha)
+            {
+                writer.Write(" upperbound");
+            }
+            else if (beta <= bestMove.Value)
+            {
+                writer.Write(" lowerbound");
             }
 
             // nps

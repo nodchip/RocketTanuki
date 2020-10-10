@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using static RocketTanuki.Evaluator;
@@ -25,14 +27,59 @@ namespace RocketTanuki
 
             for (int depth = 1; depth < MaxPlay && Searchers.Instance.thinking; ++depth)
             {
-                BestMove bestMoveCandidate = search(position, -MateValue, MateValue, depth);
+                int alpha = -InfiniteValue;
+                int beta = InfiniteValue;
+                int delta = InfiniteValue;
+
+                if (depth >= 4)
+                {
+                    delta = 17;
+                    alpha = Math.Max(bestMove.Value - delta, -InfiniteValue);
+                    beta = Math.Min(bestMove.Value + delta, InfiniteValue);
+                }
+
+                BestMove bestMoveCandidate;
+                while (true)
+                {
+                    bestMoveCandidate = search(position, alpha, beta, depth);
+                    bestMoveCandidate.Depth = depth;
+                    if ((bestMoveCandidate.Value <= alpha || beta <= bestMoveCandidate.Value)
+                        && TimeManager.Instance.ElapsedMs() > 3000)
+                    {
+                        Usi.OutputPv(bestMoveCandidate, alpha, beta);
+                    }
+
+                    if (!Searchers.Instance.thinking)
+                    {
+                        break;
+                    }
+
+                    if (bestMoveCandidate.Value <= alpha)
+                    {
+                        beta = (alpha + beta) / 2;
+                        alpha = Math.Max(bestMoveCandidate.Value - delta, -InfiniteValue);
+                    }
+                    else if (beta <= bestMoveCandidate.Value)
+                    {
+                        beta = Math.Min(bestMoveCandidate.Value + delta, InfiniteValue);
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                    delta += delta / 4 + 5;
+
+                    Debug.Assert(-InfiniteValue <= alpha);
+                    Debug.Assert(beta <= InfiniteValue);
+                }
+
                 if (Searchers.Instance.thinking)
                 {
                     bestMove = bestMoveCandidate;
-                    bestMove.Depth = depth;
                 }
 
-                Usi.OutputPv(bestMove);
+                Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue);
             }
             return bestMove;
         }
