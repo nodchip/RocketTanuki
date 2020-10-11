@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.SqlServer.Server;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -399,15 +400,21 @@ namespace RocketTanuki
         /// </summary>
         /// <param name="piece"></param>
         /// <returns></returns>
-        public static Piece ToOpponentsHandPiece(this Piece piece)
+        public static Piece ToOpponentHandPiece(this Piece piece)
         {
-            Debug.Assert(PieceToOpponentsHandPieces[(int)piece] != Piece.NoPiece);
-            return PieceToOpponentsHandPieces[(int)piece];
+            Debug.Assert(PieceToOpponentHandPieces[(int)piece] != Piece.NoPiece);
+            return PieceToOpponentHandPieces[(int)piece];
+        }
+
+        public static Piece ToOpponentPiece(this Piece piece)
+        {
+            Debug.Assert(PieceToOpponentHandPieces[(int)piece] != Piece.NoPiece);
+            return PieceToOpponentPieces[(int)piece];
         }
 
         private static Piece[] NonPromotedToPromoted = new Piece[(int)Piece.NumPieces];
 
-        private static Piece[] PieceToOpponentsHandPieces = {
+        private static Piece[] PieceToOpponentHandPieces = {
             Piece.NoPiece,
             Piece.WhitePawn,
             Piece.WhiteLance,
@@ -437,6 +444,39 @@ namespace RocketTanuki
             Piece.BlackSilver,
             Piece.BlackBishop,
             Piece.BlackRook,
+            Piece.NumPieces,
+        };
+
+        private static Piece[] PieceToOpponentPieces = {
+            Piece.NoPiece,
+            Piece.WhitePawn,
+            Piece.WhiteLance,
+            Piece.WhiteKnight,
+            Piece.WhiteSilver,
+            Piece.WhiteGold,
+            Piece.WhiteBishop,
+            Piece.WhiteRook,
+            Piece.WhiteKing,
+            Piece.WhitePromotedPawn,
+            Piece.WhitePromotedLance,
+            Piece.WhitePromotedKnight,
+            Piece.WhitePromotedSilver,
+            Piece.WhiteHorse,
+            Piece.WhiteDragon,
+            Piece.BlackPawn,
+            Piece.BlackLance,
+            Piece.BlackKnight,
+            Piece.BlackSilver,
+            Piece.BlackGold,
+            Piece.BlackBishop,
+            Piece.BlackRook,
+            Piece.BlackKing,
+            Piece.BlackPromotedPawn,
+            Piece.BlackPromotedLance,
+            Piece.BlackPromotedKnight,
+            Piece.BlackPromotedSilver,
+            Piece.BlackHorse,
+            Piece.BlackDragon,
             Piece.NumPieces,
         };
 

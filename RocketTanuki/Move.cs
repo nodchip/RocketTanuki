@@ -117,7 +117,7 @@ namespace RocketTanuki
                 move.PieceFrom = CharToPiece[moveString[0]];
                 if (position.SideToMove == Color.White)
                 {
-                    move.PieceFrom = move.PieceFrom.ToOpponentsHandPiece();
+                    move.PieceFrom = move.PieceFrom.ToOpponentHandPiece();
                 }
                 move.Drop = true;
             }

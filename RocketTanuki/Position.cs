@@ -48,9 +48,9 @@ namespace RocketTanuki
             if (move.PieceTo != Piece.NoPiece)
             {
                 Debug.Assert(move.PieceTo.ToColor() != SideToMove);
-                Debug.Assert(move.PieceTo.ToOpponentsHandPiece().ToColor() == SideToMove);
-                ++HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()];
-                Hash += Zobrist.Instance.HandPiece[(int)move.PieceTo.ToOpponentsHandPiece()];
+                Debug.Assert(move.PieceTo.ToOpponentHandPiece().ToColor() == SideToMove);
+                ++HandPieces[(int)move.PieceTo.ToOpponentHandPiece()];
+                Hash += Zobrist.Instance.HandPiece[(int)move.PieceTo.ToOpponentHandPiece()];
             }
 
             Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
@@ -137,9 +137,9 @@ namespace RocketTanuki
             if (move.PieceTo != Piece.NoPiece)
             {
                 Debug.Assert(move.PieceTo.ToColor() != SideToMove);
-                Debug.Assert(HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()] > 0);
-                Hash -= Zobrist.Instance.HandPiece[(int)move.PieceTo.ToOpponentsHandPiece()];
-                --HandPieces[(int)move.PieceTo.ToOpponentsHandPiece()];
+                Debug.Assert(HandPieces[(int)move.PieceTo.ToOpponentHandPiece()] > 0);
+                Hash -= Zobrist.Instance.HandPiece[(int)move.PieceTo.ToOpponentHandPiece()];
+                --HandPieces[(int)move.PieceTo.ToOpponentHandPiece()];
             }
         }
 
