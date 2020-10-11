@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static RocketTanuki.Evaluator;
 
@@ -23,7 +24,7 @@ namespace RocketTanuki
                 Move = Move.Resign,
                 Depth = 1,
             };
-            NumSearchedNodes = 0;
+            numSearchedNodes = 0;
 
             for (int depth = 1; depth < MaxPlay && Searchers.Instance.thinking; ++depth)
             {
@@ -103,7 +104,7 @@ namespace RocketTanuki
                 };
             }
 
-            if (threadId == 0 && (NumSearchedNodes++) % 4096 == 0)
+            if (threadId == 0 && (callCount++) % 4096 == 0)
             {
                 // TimeManager.IsThinking()は重いと思うので、
                 // 定期的に結果を確認し、Searchers.thinkingに代入する。
@@ -144,6 +145,7 @@ namespace RocketTanuki
                 }
 
                 BestMove childBestMove;
+                Interlocked.Increment(ref numSearchedNodes);
                 using (var mover = new Mover(position, move))
                 {
                     if (!mover.IsValid())
@@ -252,6 +254,7 @@ namespace RocketTanuki
         }
 
         private int threadId;
-        public long NumSearchedNodes { get; set; } = 0;
+        private int callCount = 0;
+        public long numSearchedNodes = 0;
     }
 }

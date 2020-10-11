@@ -90,7 +90,7 @@ namespace RocketTanuki
             long numSearchedNodes = 0;
             foreach (var searcher in searchers)
             {
-                numSearchedNodes += searcher.NumSearchedNodes;
+                numSearchedNodes += Interlocked.Read(ref searcher.numSearchedNodes);
             }
             return numSearchedNodes;
         }
