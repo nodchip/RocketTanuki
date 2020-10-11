@@ -281,12 +281,13 @@ namespace RocketTanuki
 
             // 隠れ層第1層から隠れ層第2層の間のネットワークパラメーター
             var z2 = new int[32];
+            Array.Copy(firstBiases, z2, z2.Length);
             for (int outputIndex = 0; outputIndex < z2.Length; ++outputIndex)
             {
-                var sum = firstBiases[outputIndex];
+                int offset = outputIndex * a1.Length;
                 for (int inputIndex = 0; inputIndex < a1.Length; ++inputIndex)
                 {
-                    sum += firstWeights[outputIndex * z2.Length + inputIndex] * a1[inputIndex];
+                    z2[outputIndex] += firstWeights[offset + inputIndex] * a1[inputIndex];
                 }
             }
 
@@ -298,12 +299,13 @@ namespace RocketTanuki
 
             // 隠れ層第2層から隠れ層第3層の間のネットワークパラメーター
             var z3 = new int[32];
+            Array.Copy(secondBiases, z3, z3.Length);
             for (int outputIndex = 0; outputIndex < z3.Length; ++outputIndex)
             {
-                var sum = secondBiases[outputIndex];
+                int offset = outputIndex * a2.Length;
                 for (int inputIndex = 0; inputIndex < a2.Length; ++inputIndex)
                 {
-                    sum += secondWeights[outputIndex * z3.Length + inputIndex] * a2[inputIndex];
+                    z3[outputIndex] += secondWeights[offset + inputIndex] * a2[inputIndex];
                 }
             }
 
@@ -317,7 +319,7 @@ namespace RocketTanuki
             var z4 = thirdBiases[0];
             for (int inputIndex = 0; inputIndex < a3.Length; ++inputIndex)
             {
-                z4 += secondWeights[inputIndex] * a3[inputIndex];
+                z4 += thirdWeights[inputIndex] * a3[inputIndex];
             }
 
             return z4 / FVScale;
@@ -408,7 +410,7 @@ namespace RocketTanuki
         public const int KingValue = 15000;
         private const int HalfDimentions = 256;
         private const int WeightScaleBits = 6;
-        private const int FVScale = 32;
+        private const int FVScale = 16;
 
         private static int[] MaterialValues = {
             ZeroValue,
