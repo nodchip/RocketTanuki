@@ -234,6 +234,10 @@ namespace RocketTanuki
                 {
                     break;
                 }
+                else if (ch == '-')
+                {
+                    continue;
+                }
 
                 var piece = CharToPiece[ch];
                 Debug.Assert(piece != null);

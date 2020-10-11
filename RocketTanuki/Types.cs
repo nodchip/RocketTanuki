@@ -13,6 +13,7 @@ namespace RocketTanuki
     {
         Black,
         White,
+        NumColors,
     }
 
     public enum Piece

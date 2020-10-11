@@ -168,8 +168,13 @@ namespace RocketTanuki
                     case "gameover":
                         break;
 
+                    // 以下デバッグ用コマンド
                     case "d":
                         Console.WriteLine(position);
+                        break;
+
+                    case "eval":
+                        Console.WriteLine(Evaluator.Instance.Evaluate(position));
                         break;
 
                     default:
