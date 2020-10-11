@@ -290,7 +290,6 @@ namespace RocketTanuki
         public bool IsChecked(Color color)
         {
             var king = color == Color.Black ? Piece.BlackKing : Piece.WhiteKing;
-            FindPiece(king, out int file, out int rank);
 
             // 駒を移動する指し手
             for (int fileFrom = 0; fileFrom < Position.BoardSize; ++fileFrom)
