@@ -23,5 +23,16 @@ namespace RocketTanukiTests
                 }
             }
         }
+
+        public void Position_King()
+        {
+            var position = new Position();
+            position.Set(Position.StartposSfen);
+
+            Assert.AreEqual(4, position.BlackKingFile);
+            Assert.AreEqual(8, position.BlackKingRank);
+            Assert.AreEqual(4, position.WhiteKingFile);
+            Assert.AreEqual(0, position.WhiteKingRank);
+        }
     }
 }

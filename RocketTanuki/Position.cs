@@ -15,15 +15,20 @@ namespace RocketTanuki
     /// </summary>
     public class Position
     {
+        public const string StartposSfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
+        public const string MatsuriSfen = "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w GR5pnsg 1";
+        public const string MaxSfen = "8R/kSS1S1K2/4B4/9/9/9/9/9/3L1L1L1 b RBGSNLP3g3n17p 1";
+
         public const int BoardSize = 9;
         public Color SideToMove { get; set; }
         public Piece[,] Board { get; } = new Piece[BoardSize, BoardSize];
         public int[] HandPieces { get; } = new int[(int)Piece.NumPieces];
         public int Ply { get; set; }
         public long Hash { get; set; }
-        public const string StartposSfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
-        public const string MatsuriSfen = "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w GR5pnsg 1";
-        public const string MaxSfen = "8R/kSS1S1K2/4B4/9/9/9/9/9/3L1L1L1 b RBGSNLP3g3n17p 1";
+        public int BlackKingFile { get; set; }
+        public int BlackKingRank { get; set; }
+        public int WhiteKingFile { get; set; }
+        public int WhiteKingRank { get; set; }
 
         public static void Initialize()
         {
@@ -73,6 +78,17 @@ namespace RocketTanuki
 
             SideToMove = SideToMove.ToOpponent();
             Hash ^= Zobrist.Instance.Side;
+
+            if (move.PieceFrom == Piece.BlackKing)
+            {
+                BlackKingFile = move.FileTo;
+                BlackKingRank = move.RankTo;
+            }
+            else if (move.PieceFrom == Piece.WhiteKing)
+            {
+                WhiteKingFile = move.FileTo;
+                WhiteKingRank = move.RankTo;
+            }
         }
 
         /// <summary>
@@ -85,6 +101,17 @@ namespace RocketTanuki
 
             Hash ^= Zobrist.Instance.Side;
             SideToMove = SideToMove.ToOpponent();
+
+            if (move.PieceFrom == Piece.BlackKing)
+            {
+                BlackKingFile = move.FileFrom;
+                BlackKingRank = move.RankFrom;
+            }
+            else if (move.PieceFrom == Piece.WhiteKing)
+            {
+                WhiteKingFile = move.FileFrom;
+                WhiteKingRank = move.RankFrom;
+            }
 
             if (move.Drop)
             {
@@ -165,6 +192,18 @@ namespace RocketTanuki
                     }
                     Board[file, rank] = piece;
                     Hash += Zobrist.Instance.PieceSquare[(int)piece, file, rank];
+
+                    if (piece == Piece.BlackKing)
+                    {
+                        BlackKingFile = file;
+                        BlackKingRank = rank;
+                    }
+                    else if (piece == Piece.WhiteKing)
+                    {
+                        WhiteKingFile = file;
+                        WhiteKingRank = rank;
+                    }
+
                     --file;
                 }
             }
