@@ -306,7 +306,6 @@ namespace RocketTanuki
             fixed (byte* a1Pointer = a1)
             fixed (sbyte* firstWeightsPointer = firstWeights)
             {
-
                 for (int outputIndex = 0; outputIndex < z2.Length; ++outputIndex)
                 {
                     int offset = outputIndex * a1.Length;
@@ -332,21 +331,39 @@ namespace RocketTanuki
                 }
             }
 
-            var a2 = new int[32];
+            var a2 = new byte[32];
             for (int outputIndex = 0; outputIndex < z2.Length; ++outputIndex)
             {
-                a2[outputIndex] = Max(0, Min(127, z2[outputIndex] >> WeightScaleBits));
+                a2[outputIndex] = (byte)Clamp(z2[outputIndex] >> WeightScaleBits, 0, 127);
             }
 
             // 隠れ層第2層から隠れ層第3層の間のネットワークパラメーター
             var z3 = new int[32];
-            Array.Copy(secondBiases, z3, z3.Length);
-            for (int outputIndex = 0; outputIndex < z3.Length; ++outputIndex)
+            fixed (byte* a2Pointer = a2)
+            fixed (sbyte* secondWeightsPointer = secondWeights)
             {
-                int offset = outputIndex * a2.Length;
-                for (int inputIndex = 0; inputIndex < a2.Length; ++inputIndex)
+                for (int outputIndex = 0; outputIndex < z3.Length; ++outputIndex)
                 {
-                    z3[outputIndex] += secondWeights[offset + inputIndex] * a2[inputIndex];
+                    int offset = outputIndex * a2.Length;
+
+                    //for (int inputIndex = 0; inputIndex < a2.Length; ++inputIndex)
+                    //{
+                    //    z3[outputIndex] += secondWeights[offset + inputIndex] * a2[inputIndex];
+                    //}
+
+                    var sum = Vector256<int>.Zero;
+                    for (int chunkIndex = 0; chunkIndex < a2.Length / Vector256<sbyte>.Count; ++chunkIndex)
+                    {
+                        var productShort = Avx2.MultiplyAddAdjacent(
+                            Avx2.LoadVector256(&a2Pointer[chunkIndex * Vector256<byte>.Count]),
+                            Avx2.LoadVector256(&secondWeightsPointer[offset + chunkIndex * Vector256<sbyte>.Count]));
+                        var productInt = Avx2.MultiplyAddAdjacent(productShort, Vector256.Create((short)1));
+                        sum = Avx2.Add(sum, productInt);
+                    }
+                    var sum128 = Avx2.Add(sum.GetLower(), sum.GetUpper());
+                    sum128 = Avx2.Add(sum128, Avx2.Shuffle(sum128, _MM_PERM_BADC));
+                    sum128 = Avx2.Add(sum128, Avx2.Shuffle(sum128, _MM_PERM_CDAB));
+                    z3[outputIndex] = sum128.ToScalar() + secondBiases[outputIndex];
                 }
             }
 
