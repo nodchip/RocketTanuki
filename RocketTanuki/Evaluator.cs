@@ -246,26 +246,44 @@ namespace RocketTanuki
             }
             Debug.Assert(pieceIdsIndex == pieceIdsFromBlack.Length);
 
-            var z1Black = new int[HalfDimentions];
-            var z1White = new int[HalfDimentions];
+            var z1Black = new short[HalfDimentions];
+            var z1White = new short[HalfDimentions];
             Array.Copy(featureTransformerBiases, z1Black, HalfDimentions);
             Array.Copy(featureTransformerBiases, z1White, HalfDimentions);
-            for (int i = 0; i < pieceIdsFromBlack.Length; ++i)
-            {
-                int kpIndexBlack = MakeKPIndex(position.BlackKingFile, position.BlackKingRank, pieceIdsFromBlack[i]);
-                int kpIndexWhite = MakeKPIndex(8 - position.WhiteKingFile, 8 - position.WhiteKingRank, pieceIdsFromWhite[i]);
 
-                for (int j = 0; j < HalfDimentions; ++j)
+            fixed (short* featureTransformerWeightsPointer = featureTransformerWeights)
+            fixed (short* z1BlackPointer = z1Black)
+            fixed (short* z1WhitePointer = z1White)
+            {
+                for (int i = 0; i < pieceIdsFromBlack.Length; ++i)
                 {
-                    z1Black[j] += featureTransformerWeights[HalfDimentions * kpIndexBlack + j];
-                    z1White[j] += featureTransformerWeights[HalfDimentions * kpIndexWhite + j];
+                    int kpIndexBlack = MakeKPIndex(position.BlackKingFile, position.BlackKingRank, pieceIdsFromBlack[i]);
+                    int offsetBlack = HalfDimentions * kpIndexBlack;
+                    int kpIndexWhite = MakeKPIndex(8 - position.WhiteKingFile, 8 - position.WhiteKingRank, pieceIdsFromWhite[i]);
+                    int offsetWhite = HalfDimentions * kpIndexWhite;
+
+                    //for (int j = 0; j < HalfDimentions; ++j)
+                    //{
+                    //    z1Black[j] += featureTransformerWeights[offsetBlack + j];
+                    //    z1White[j] += featureTransformerWeights[offsetWhite + j];
+                    //}
+
+                    for (int chunkIndex = 0; chunkIndex < HalfDimentions / Vector256<short>.Count; ++chunkIndex)
+                    {
+                        Avx2.Store(&z1BlackPointer[chunkIndex * Vector256<short>.Count], Avx2.Add(
+                            Avx2.LoadVector256(&z1BlackPointer[chunkIndex * Vector256<short>.Count]),
+                            Avx2.LoadVector256(&featureTransformerWeightsPointer[offsetBlack + chunkIndex * Vector256<short>.Count])));
+                        Avx2.Store(&z1WhitePointer[chunkIndex * Vector256<short>.Count], Avx2.Add(
+                            Avx2.LoadVector256(&z1WhitePointer[chunkIndex * Vector256<short>.Count]),
+                            Avx2.LoadVector256(&featureTransformerWeightsPointer[offsetWhite + chunkIndex * Vector256<short>.Count])));
+                    }
                 }
             }
 
             // ClippedReLU
             var a1 = new byte[HalfDimentions * 2];
-            int[] first;
-            int[] second;
+            short[] first;
+            short[] second;
 
             if (position.SideToMove == Color.Black)
             {
@@ -279,8 +297,8 @@ namespace RocketTanuki
             }
             for (int i = 0; i < HalfDimentions; ++i)
             {
-                a1[i] = (byte)Clamp(first[i], 0, 127);
-                a1[i + HalfDimentions] = (byte)Clamp(second[i], 0, 127);
+                a1[i] = (byte)Clamp((int)first[i], 0, 127);
+                a1[i + HalfDimentions] = (byte)Clamp((int)second[i], 0, 127);
             }
 
             // 隠れ層第1層から隠れ層第2層の間のネットワークパラメーター
