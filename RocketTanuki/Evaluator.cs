@@ -7,6 +7,10 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Math;
+using System.Runtime.Intrinsics.X86;
+using System.Runtime.Intrinsics;
+using System.Numerics;
+using System.Globalization;
 
 namespace RocketTanuki
 {
@@ -205,7 +209,7 @@ namespace RocketTanuki
             }
         }
 
-        public int Evaluate(Position position)
+        public unsafe int Evaluate(Position position)
         {
             // 入力層と隠れ層第1層の間のネットワークパラメーター
             var pieceIdsFromBlack = new int[38];
@@ -259,7 +263,7 @@ namespace RocketTanuki
             }
 
             // ClippedReLU
-            var a1 = new int[HalfDimentions * 2];
+            var a1 = new byte[HalfDimentions * 2];
             int[] first;
             int[] second;
 
@@ -275,19 +279,38 @@ namespace RocketTanuki
             }
             for (int i = 0; i < HalfDimentions; ++i)
             {
-                a1[i] = Max(0, Min(127, first[i]));
-                a1[i + HalfDimentions] = Max(0, Min(127, second[i]));
+                a1[i] = (byte)Clamp(first[i], 0, 127);
+                a1[i + HalfDimentions] = (byte)Clamp(second[i], 0, 127);
             }
 
             // 隠れ層第1層から隠れ層第2層の間のネットワークパラメーター
             var z2 = new int[32];
-            Array.Copy(firstBiases, z2, z2.Length);
-            for (int outputIndex = 0; outputIndex < z2.Length; ++outputIndex)
+            fixed (byte* a1Pointer = a1)
+            fixed (sbyte* firstWeightsPointer = firstWeights)
             {
-                int offset = outputIndex * a1.Length;
-                for (int inputIndex = 0; inputIndex < a1.Length; ++inputIndex)
+
+                for (int outputIndex = 0; outputIndex < z2.Length; ++outputIndex)
                 {
-                    z2[outputIndex] += firstWeights[offset + inputIndex] * a1[inputIndex];
+                    int offset = outputIndex * a1.Length;
+
+                    //for (int inputIndex = 0; inputIndex < a1.Length; ++inputIndex)
+                    //{
+                    //    z2[outputIndex] += firstWeights[offset + inputIndex] * a1[inputIndex];
+                    //}
+
+                    var sum = Vector256<int>.Zero;
+                    for (int chunkIndex = 0; chunkIndex < HalfDimentions * 2 / Vector256<sbyte>.Count; ++chunkIndex)
+                    {
+                        var productShort = Avx2.MultiplyAddAdjacent(
+                            Avx2.LoadVector256(&a1Pointer[chunkIndex * Vector256<byte>.Count]),
+                            Avx2.LoadVector256(&firstWeightsPointer[offset + chunkIndex * Vector256<sbyte>.Count]));
+                        var productInt = Avx2.MultiplyAddAdjacent(productShort, Vector256.Create((short)1));
+                        sum = Avx2.Add(sum, productInt);
+                    }
+                    var sum128 = Avx2.Add(sum.GetLower(), sum.GetUpper());
+                    sum128 = Avx2.Add(sum128, Avx2.Shuffle(sum128, _MM_PERM_BADC));
+                    sum128 = Avx2.Add(sum128, Avx2.Shuffle(sum128, _MM_PERM_CDAB));
+                    z2[outputIndex] = sum128.ToScalar() + firstBiases[outputIndex];
                 }
             }
 
@@ -411,6 +434,8 @@ namespace RocketTanuki
         private const int HalfDimentions = 256;
         private const int WeightScaleBits = 6;
         private const int FVScale = 16;
+        private const int _MM_PERM_BADC = 0x4E;
+        private const int _MM_PERM_CDAB = 0xB1;
 
         private static int[] MaterialValues = {
             ZeroValue,
