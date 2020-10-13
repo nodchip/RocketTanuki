@@ -245,7 +245,12 @@ namespace RocketTanuki
                 if (ch == ' ')
                 {
                     break;
-                } else if (Char.IsDigit(ch))
+                }
+                else if (ch == '-')
+                {
+                    continue;
+                }
+                else if (Char.IsDigit(ch))
                 {
                     numAddedHandPieces = ch - '0';
                     continue;
