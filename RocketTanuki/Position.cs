@@ -195,7 +195,7 @@ namespace RocketTanuki
                 else
                 {
                     var piece = CharToPiece[ch];
-                    Debug.Assert(piece != null);
+                    Debug.Assert(piece != Piece.NoPiece);
                     if (promotion)
                     {
                         piece = piece.ToPromoted();
@@ -238,22 +238,24 @@ namespace RocketTanuki
             {
                 HandPieces[handPieceIndex] = 0;
             }
+            int numAddedHandPieces = 1;
             while (true)
             {
                 var ch = sfen[index++];
                 if (ch == ' ')
                 {
                     break;
-                }
-                else if (ch == '-')
+                } else if (Char.IsDigit(ch))
                 {
+                    numAddedHandPieces = ch - '0';
                     continue;
                 }
 
                 var piece = CharToPiece[ch];
-                Debug.Assert(piece != null);
-                ++HandPieces[(int)piece];
+                Debug.Assert(piece != Piece.NoPiece);
+                HandPieces[(int)piece] += numAddedHandPieces;
                 Hash += Zobrist.Instance.HandPiece[(int)piece];
+                numAddedHandPieces = 1;
             }
 
             Play = int.Parse(sfen.Substring(index));
