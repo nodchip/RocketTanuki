@@ -12,6 +12,8 @@ namespace RocketTanuki
         public const string USI_Ponder = "USI_Ponder";
         public const string USI_Hash = "USI_Hash";
         public const string EvalFile = "EvalFile";
+        public const string BookFile = "BookFile";
+        public const string IgnoreBookPlay = "IgnoreBookPlay";
 
         public static void Initialize()
         {
@@ -44,12 +46,15 @@ namespace RocketTanuki
                         Console.WriteLine("id name Rocket Tanuki");
                         Console.WriteLine("id author nodchip");
                         Console.WriteLine($"option name {EvalFile} type filename default eval/nn.bin");
+                        Console.WriteLine($"option name {BookFile} type filename default book/user_book1.db");
+                        Console.WriteLine($"option name {IgnoreBookPlay} type check default true");
                         Console.WriteLine("usiok");
                         Console.Out.Flush();
                         break;
 
                     case "isready":
                         Evaluator.Instance.Load(options);
+                        Book.Instance.Load(options);
                         TranspositionTable.Instance.Resize(int.Parse(options[USI_Hash]));
                         Console.WriteLine("readyok");
                         Console.Out.Flush();
