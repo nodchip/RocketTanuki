@@ -76,11 +76,13 @@ namespace RocketTanuki
                             Debug.Assert(command.Length >= 6);
                             var sfen = string.Join(" ", split.Skip(2).Take(4));
                             position.Set(sfen);
+                            Evaluator.Instance.UpdateAccumulator(position);
                             nextIndex = 6;
                         }
                         else if (split[1] == "startpos")
                         {
                             position.Set(Position.StartposSfen);
+                            Evaluator.Instance.UpdateAccumulator(position);
                             nextIndex = 2;
                         }
                         else
@@ -97,6 +99,7 @@ namespace RocketTanuki
 
                             var move = Move.FromUsiString(position, moveString);
                             position.DoMove(move);
+                            Evaluator.Instance.UpdateAccumulator(position);
                         }
 
                         break;
@@ -179,6 +182,7 @@ namespace RocketTanuki
 
                     case "matsuri":
                         position.Set(Position.MatsuriSfen);
+                        Evaluator.Instance.UpdateAccumulator(position);
                         break;
 
                     default:

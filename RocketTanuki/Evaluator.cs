@@ -2,15 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Math;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics;
-using System.Numerics;
-using System.Globalization;
+using System.Runtime.Intrinsics.X86;
+using static System.Math;
 
 namespace RocketTanuki
 {
@@ -212,39 +206,7 @@ namespace RocketTanuki
         public unsafe int Evaluate(Position position)
         {
             // 入力層と隠れ層第1層の間のネットワークパラメーター
-            position.State.Z1Black = new short[HalfDimentions];
-            position.State.Z1White = new short[HalfDimentions];
-            Array.Copy(featureTransformerBiases, position.State.Z1Black, HalfDimentions);
-            Array.Copy(featureTransformerBiases, position.State.Z1White, HalfDimentions);
-
-            // 盤上の駒
-            for (int file = 0; file < Position.BoardSize; ++file)
-            {
-                for (int rank = 0; rank < Position.BoardSize; ++rank)
-                {
-                    if (position.Board[file, rank] == Piece.NoPiece
-                        || position.Board[file, rank] == Piece.BlackKing
-                        || position.Board[file, rank] == Piece.WhiteKing)
-                    {
-                        continue;
-                    }
-
-                    Add(position,
-                        MakeBoardPieceId(position.Board[file, rank], file, rank),
-                        MakeBoardPieceId(position.Board[file, rank].ToOpponentPiece(), 8 - file, 8 - rank));
-                }
-            }
-
-            // 持ち駒
-            for (var handPiece = Piece.NoPiece; handPiece < Piece.NumPieces; ++handPiece)
-            {
-                for (int numHandPieces = 1; numHandPieces <= position.HandPieces[(int)handPiece]; ++numHandPieces)
-                {
-                    Add(position,
-                        MakeHandPieceId(handPiece, numHandPieces),
-                        MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces));
-                }
-            }
+            UpdateAccumulator(position);
 
             // ClippedReLU
             var a1 = new byte[HalfDimentions * 2];
@@ -349,6 +311,151 @@ namespace RocketTanuki
             return z4 / FVScale;
         }
 
+        /// <summary>
+        /// Accumulatorの値を計算する。
+        /// </summary>
+        /// <param name="position"></param>
+        public void UpdateAccumulator(Position position)
+        {
+            if (position.State.Z1Black != null && position.State.Z1White != null)
+            {
+                // すでに計算してあるので何もしない。
+                return;
+            }
+
+            if (position.State.Previous != null
+                && position.State.Previous.Z1Black != null
+                && position.State.Previous.Z1White != null
+                && position.LastMove.PieceFrom != Piece.BlackKing
+                && position.LastMove.PieceFrom != Piece.WhiteKing)
+            {
+                // 一つ前の局面のAccumulatorの値を計算する。
+                UpdateAccumulatorIncrementally(position);
+                return;
+            }
+
+            // 一つ前の局面のAccumulatorの値が使えないため、全計算を行う。
+            // TODO(nodchip): 玉が移動した場合は片側のみ全計算を行う。
+            UpdateAccumulatorFully(position);
+        }
+
+        /// <summary>
+        /// Accumulatorの値を全計算で計算する。
+        /// </summary>
+        /// <param name="position"></param>
+        private void UpdateAccumulatorFully(Position position)
+        {
+            // 全計算
+            position.State.Z1Black = new short[HalfDimentions];
+            position.State.Z1White = new short[HalfDimentions];
+
+            // バイアスベクトルをコピーする
+            Array.Copy(featureTransformerBiases, position.State.Z1Black, HalfDimentions);
+            Array.Copy(featureTransformerBiases, position.State.Z1White, HalfDimentions);
+
+            // 盤上の駒
+            for (int file = 0; file < Position.BoardSize; ++file)
+            {
+                for (int rank = 0; rank < Position.BoardSize; ++rank)
+                {
+                    if (position.Board[file, rank] == Piece.NoPiece
+                        || position.Board[file, rank] == Piece.BlackKing
+                        || position.Board[file, rank] == Piece.WhiteKing)
+                    {
+                        continue;
+                    }
+
+                    Add(position,
+                        MakeBoardPieceId(position.Board[file, rank], file, rank),
+                        MakeBoardPieceId(position.Board[file, rank].ToOpponentPiece(), 8 - file, 8 - rank));
+                }
+            }
+
+            // 持ち駒
+            for (var handPiece = Piece.NoPiece; handPiece < Piece.NumPieces; ++handPiece)
+            {
+                for (int numHandPieces = 1; numHandPieces <= position.HandPieces[(int)handPiece]; ++numHandPieces)
+                {
+                    Add(position,
+                        MakeHandPieceId(handPiece, numHandPieces),
+                        MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Accumulatorの値を差分計算で計算する。
+        /// </summary>
+        /// <param name="position"></param>
+        private void UpdateAccumulatorIncrementally(Position position)
+        {
+            Debug.Assert(position.State.Previous != null);
+            Debug.Assert(position.State.Previous.Z1Black != null);
+            Debug.Assert(position.State.Previous.Z1White != null);
+            Debug.Assert(position.LastMove.PieceFrom != Piece.BlackKing);
+            Debug.Assert(position.LastMove.PieceFrom != Piece.WhiteKing);
+            Debug.Assert(position.LastMove.PieceTo != Piece.BlackKing);
+            Debug.Assert(position.LastMove.PieceTo != Piece.WhiteKing);
+
+            // 差分計算
+            Debug.Assert(position.LastMove != null);
+
+            position.State.Z1Black = new short[HalfDimentions];
+            position.State.Z1White = new short[HalfDimentions];
+
+            // 1手前のベクトルをコピーする
+            Array.Copy(position.State.Previous.Z1Black, position.State.Z1Black, HalfDimentions);
+            Array.Copy(position.State.Previous.Z1White, position.State.Z1White, HalfDimentions);
+
+            var move = position.LastMove;
+            if (move.PieceTo != Piece.NoPiece)
+            {
+                // 相手の駒を取る指し手
+
+                // 持ち駒を増やす
+                var handPiece = move.PieceTo.ToOpponentHandPiece();
+                var numHandPieces = position.HandPieces[(int)handPiece];
+                Add(position,
+                    MakeHandPieceId(handPiece, numHandPieces),
+                    MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces));
+
+                // 盤上から駒を取り除く
+                Subtract(position,
+                    MakeBoardPieceId(move.PieceTo, move.FileTo, move.RankTo),
+                    MakeBoardPieceId(move.PieceTo.ToOpponentPiece(), 8 - move.FileTo, 8 - move.RankTo));
+            }
+
+            // 盤上に駒を置く
+            Add(position,
+                MakeBoardPieceId(move.PieceFrom, move.FileTo, move.RankTo),
+                MakeBoardPieceId(move.PieceFrom.ToOpponentPiece(), 8 - move.FileTo, 8 - move.RankTo));
+
+            if (move.Drop)
+            {
+                // 駒を打つ指し手
+
+                // 持ち駒を減らす
+                var handPiece = move.PieceFrom;
+                var numHandPieces = position.HandPieces[(int)handPiece];
+                Subtract(position,
+                    MakeHandPieceId(handPiece, numHandPieces),
+                    MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces));
+            }
+            else
+            {
+                // 駒を移動する指し手
+                Subtract(position,
+                    MakeBoardPieceId(move.PieceFrom, move.FileFrom, move.RankFrom),
+                    MakeBoardPieceId(move.PieceFrom.ToOpponentPiece(), 8 - move.FileFrom, move.RankFrom));
+            }
+        }
+
+        /// <summary>
+        /// 特徴ベクトルをアフィン変換し保持してあるベクトルに、重み行列の列を足す。
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="pieceIdFromBlack"></param>
+        /// <param name="pieceIdFromWhite"></param>
         private unsafe void Add(Position position, int pieceIdFromBlack, int pieceIdFromWhite)
         {
             fixed (short* featureTransformerWeightsPointer = featureTransformerWeights)
@@ -378,6 +485,40 @@ namespace RocketTanuki
             }
         }
 
+        /// <summary>
+        /// 特徴ベクトルをアフィン変換し保持してあるベクトルから、重み行列の列を引く。
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="pieceIdFromBlack"></param>
+        /// <param name="pieceIdFromWhite"></param>
+        private unsafe void Subtract(Position position, int pieceIdFromBlack, int pieceIdFromWhite)
+        {
+            fixed (short* featureTransformerWeightsPointer = featureTransformerWeights)
+            fixed (short* z1BlackPointer = position.State.Z1Black)
+            fixed (short* z1WhitePointer = position.State.Z1White)
+            {
+                int kpIndexBlack = MakeKPIndex(position.BlackKingFile, position.BlackKingRank, pieceIdFromBlack);
+                int offsetBlack = HalfDimentions * kpIndexBlack;
+                int kpIndexWhite = MakeKPIndex(8 - position.WhiteKingFile, 8 - position.WhiteKingRank, pieceIdFromWhite);
+                int offsetWhite = HalfDimentions * kpIndexWhite;
+
+                //for (int j = 0; j < HalfDimentions; ++j)
+                //{
+                //    z1Black[j] += featureTransformerWeights[offsetBlack + j];
+                //    z1White[j] += featureTransformerWeights[offsetWhite + j];
+                //}
+
+                for (int chunkIndex = 0; chunkIndex < HalfDimentions / Vector256<short>.Count; ++chunkIndex)
+                {
+                    Avx2.Store(&z1BlackPointer[chunkIndex * Vector256<short>.Count], Avx2.Subtract(
+                        Avx2.LoadVector256(&z1BlackPointer[chunkIndex * Vector256<short>.Count]),
+                        Avx2.LoadVector256(&featureTransformerWeightsPointer[offsetBlack + chunkIndex * Vector256<short>.Count])));
+                    Avx2.Store(&z1WhitePointer[chunkIndex * Vector256<short>.Count], Avx2.Subtract(
+                        Avx2.LoadVector256(&z1WhitePointer[chunkIndex * Vector256<short>.Count]),
+                        Avx2.LoadVector256(&featureTransformerWeightsPointer[offsetWhite + chunkIndex * Vector256<short>.Count])));
+                }
+            }
+        }
         /// <summary>
         /// 盤上の駒のPieceIdを計算する。
         /// </summary>
