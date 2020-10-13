@@ -212,9 +212,10 @@ namespace RocketTanuki
         public unsafe int Evaluate(Position position)
         {
             // 入力層と隠れ層第1層の間のネットワークパラメーター
-            var pieceIdsFromBlack = new int[38];
-            var pieceIdsFromWhite = new int[38];
-            int pieceIdsIndex = 0;
+            position.State.Z1Black = new short[HalfDimentions];
+            position.State.Z1White = new short[HalfDimentions];
+            Array.Copy(featureTransformerBiases, position.State.Z1Black, HalfDimentions);
+            Array.Copy(featureTransformerBiases, position.State.Z1White, HalfDimentions);
 
             // 盤上の駒
             for (int file = 0; file < Position.BoardSize; ++file)
@@ -228,9 +229,9 @@ namespace RocketTanuki
                         continue;
                     }
 
-                    pieceIdsFromBlack[pieceIdsIndex] = MakeBoardPieceId(position.Board[file, rank], file, rank);
-                    pieceIdsFromWhite[pieceIdsIndex] = MakeBoardPieceId(position.Board[file, rank].ToOpponentPiece(), 8 - file, 8 - rank);
-                    ++pieceIdsIndex;
+                    Add(position,
+                        MakeBoardPieceId(position.Board[file, rank], file, rank),
+                        MakeBoardPieceId(position.Board[file, rank].ToOpponentPiece(), 8 - file, 8 - rank));
                 }
             }
 
@@ -239,44 +240,9 @@ namespace RocketTanuki
             {
                 for (int numHandPieces = 1; numHandPieces <= position.HandPieces[(int)handPiece]; ++numHandPieces)
                 {
-                    pieceIdsFromBlack[pieceIdsIndex] = MakeHandPieceId(handPiece, numHandPieces);
-                    pieceIdsFromWhite[pieceIdsIndex] = MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces);
-                    ++pieceIdsIndex;
-                }
-            }
-            Debug.Assert(pieceIdsIndex == pieceIdsFromBlack.Length);
-
-            var z1Black = new short[HalfDimentions];
-            var z1White = new short[HalfDimentions];
-            Array.Copy(featureTransformerBiases, z1Black, HalfDimentions);
-            Array.Copy(featureTransformerBiases, z1White, HalfDimentions);
-
-            fixed (short* featureTransformerWeightsPointer = featureTransformerWeights)
-            fixed (short* z1BlackPointer = z1Black)
-            fixed (short* z1WhitePointer = z1White)
-            {
-                for (int i = 0; i < pieceIdsFromBlack.Length; ++i)
-                {
-                    int kpIndexBlack = MakeKPIndex(position.BlackKingFile, position.BlackKingRank, pieceIdsFromBlack[i]);
-                    int offsetBlack = HalfDimentions * kpIndexBlack;
-                    int kpIndexWhite = MakeKPIndex(8 - position.WhiteKingFile, 8 - position.WhiteKingRank, pieceIdsFromWhite[i]);
-                    int offsetWhite = HalfDimentions * kpIndexWhite;
-
-                    //for (int j = 0; j < HalfDimentions; ++j)
-                    //{
-                    //    z1Black[j] += featureTransformerWeights[offsetBlack + j];
-                    //    z1White[j] += featureTransformerWeights[offsetWhite + j];
-                    //}
-
-                    for (int chunkIndex = 0; chunkIndex < HalfDimentions / Vector256<short>.Count; ++chunkIndex)
-                    {
-                        Avx2.Store(&z1BlackPointer[chunkIndex * Vector256<short>.Count], Avx2.Add(
-                            Avx2.LoadVector256(&z1BlackPointer[chunkIndex * Vector256<short>.Count]),
-                            Avx2.LoadVector256(&featureTransformerWeightsPointer[offsetBlack + chunkIndex * Vector256<short>.Count])));
-                        Avx2.Store(&z1WhitePointer[chunkIndex * Vector256<short>.Count], Avx2.Add(
-                            Avx2.LoadVector256(&z1WhitePointer[chunkIndex * Vector256<short>.Count]),
-                            Avx2.LoadVector256(&featureTransformerWeightsPointer[offsetWhite + chunkIndex * Vector256<short>.Count])));
-                    }
+                    Add(position,
+                        MakeHandPieceId(handPiece, numHandPieces),
+                        MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces));
                 }
             }
 
@@ -287,13 +253,13 @@ namespace RocketTanuki
 
             if (position.SideToMove == Color.Black)
             {
-                first = z1Black;
-                second = z1White;
+                first = position.State.Z1Black;
+                second = position.State.Z1White;
             }
             else
             {
-                first = z1White;
-                second = z1Black;
+                first = position.State.Z1White;
+                second = position.State.Z1Black;
             }
             for (int i = 0; i < HalfDimentions; ++i)
             {
@@ -381,6 +347,35 @@ namespace RocketTanuki
             }
 
             return z4 / FVScale;
+        }
+
+        private unsafe void Add(Position position, int pieceIdFromBlack, int pieceIdFromWhite)
+        {
+            fixed (short* featureTransformerWeightsPointer = featureTransformerWeights)
+            fixed (short* z1BlackPointer = position.State.Z1Black)
+            fixed (short* z1WhitePointer = position.State.Z1White)
+            {
+                int kpIndexBlack = MakeKPIndex(position.BlackKingFile, position.BlackKingRank, pieceIdFromBlack);
+                int offsetBlack = HalfDimentions * kpIndexBlack;
+                int kpIndexWhite = MakeKPIndex(8 - position.WhiteKingFile, 8 - position.WhiteKingRank, pieceIdFromWhite);
+                int offsetWhite = HalfDimentions * kpIndexWhite;
+
+                //for (int j = 0; j < HalfDimentions; ++j)
+                //{
+                //    z1Black[j] += featureTransformerWeights[offsetBlack + j];
+                //    z1White[j] += featureTransformerWeights[offsetWhite + j];
+                //}
+
+                for (int chunkIndex = 0; chunkIndex < HalfDimentions / Vector256<short>.Count; ++chunkIndex)
+                {
+                    Avx2.Store(&z1BlackPointer[chunkIndex * Vector256<short>.Count], Avx2.Add(
+                        Avx2.LoadVector256(&z1BlackPointer[chunkIndex * Vector256<short>.Count]),
+                        Avx2.LoadVector256(&featureTransformerWeightsPointer[offsetBlack + chunkIndex * Vector256<short>.Count])));
+                    Avx2.Store(&z1WhitePointer[chunkIndex * Vector256<short>.Count], Avx2.Add(
+                        Avx2.LoadVector256(&z1WhitePointer[chunkIndex * Vector256<short>.Count]),
+                        Avx2.LoadVector256(&featureTransformerWeightsPointer[offsetWhite + chunkIndex * Vector256<short>.Count])));
+                }
+            }
         }
 
         /// <summary>

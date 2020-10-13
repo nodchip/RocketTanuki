@@ -24,6 +24,8 @@ namespace RocketTanuki
         public int BlackKingRank { get; set; }
         public int WhiteKingFile { get; set; }
         public int WhiteKingRank { get; set; }
+        public PositionState State { get; set; }
+        public Move LastMove { get; set; }
 
         public static void Initialize()
         {
@@ -86,6 +88,12 @@ namespace RocketTanuki
             }
 
             ++Play;
+
+            LastMove = move;
+
+            var newState = new PositionState();
+            newState.Previous = State;
+            State = newState;
         }
 
         /// <summary>
@@ -95,6 +103,10 @@ namespace RocketTanuki
         public void UndoMove(Move move)
         {
             Debug.Assert(SideToMove != move.SideToMove);
+
+            State = State.Previous;
+
+            LastMove = null;
 
             --Play;
 
@@ -245,6 +257,8 @@ namespace RocketTanuki
             }
 
             Play = int.Parse(sfen.Substring(index));
+
+            State = new PositionState();
         }
 
         public override String ToString()
@@ -401,5 +415,14 @@ namespace RocketTanuki
 
             return true;
         }
+    }
+
+    public class PositionState
+    {
+        // 一つ前の局面の局面情報
+        // Rootノードの場合はnull
+        public PositionState Previous { get; set; }
+        public short[] Z1Black { get; set; }
+        public short[] Z1White { get; set; }
     }
 }
