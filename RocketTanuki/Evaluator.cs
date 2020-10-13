@@ -403,7 +403,8 @@ namespace RocketTanuki
         {
             PieceId offset = HandPieceIds[(int)piece];
             Debug.Assert(offset != PieceId.PieceIdZero);
-            return (int)offset + numHandPieces;
+            // 1枚目の持ち駒のIDは0から始まるので、1引く
+            return (int)offset + numHandPieces - 1;
         }
 
         /// <summary>
