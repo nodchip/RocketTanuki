@@ -144,7 +144,7 @@ namespace RocketTanuki
             Debug.Assert(options.ContainsKey(Program.EvalFile));
             var evalFilePath = options[Program.EvalFile];
 
-            using (var reader = new BinaryReader(File.Open(evalFilePath, FileMode.Open)))
+            using (var reader = new BinaryReader(File.Open(evalFilePath, FileMode.Open, FileAccess.Read, FileShare.Read)))
             {
                 var version = reader.ReadUInt32();
                 Debug.Assert(version == 2062757654, $"Unsupported version: version={version}");
