@@ -144,6 +144,10 @@ namespace RocketTanuki
             Debug.Assert(options.ContainsKey(Program.EvalFile));
             var evalFilePath = options[Program.EvalFile];
 
+            Console.WriteLine("info string Loading an eval file...");
+            Console.WriteLine($"info string EvalFile={evalFilePath}");
+            Console.Out.Flush();
+
             using (var reader = new BinaryReader(File.Open(evalFilePath, FileMode.Open, FileAccess.Read, FileShare.Read)))
             {
                 var version = reader.ReadUInt32();
@@ -201,6 +205,8 @@ namespace RocketTanuki
 
                 Debug.Assert(reader.BaseStream.Position == reader.BaseStream.Length);
             }
+
+            Console.WriteLine("info string Loaded an eval file...");
         }
 
         public unsafe int Evaluate(Position position)
