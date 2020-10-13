@@ -177,6 +177,10 @@ namespace RocketTanuki
                         Console.WriteLine(Evaluator.Instance.Evaluate(position));
                         break;
 
+                    case "matsuri":
+                        position.Set(Position.MatsuriSfen);
+                        break;
+
                     default:
                         Console.WriteLine($"info string Unsupported command: command={command}");
                         Console.Out.Flush();
