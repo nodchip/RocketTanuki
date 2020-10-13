@@ -18,7 +18,7 @@ namespace RocketTanuki
         public Color SideToMove { get; set; }
         public Piece[,] Board { get; } = new Piece[BoardSize, BoardSize];
         public int[] HandPieces { get; } = new int[(int)Piece.NumPieces];
-        public int Ply { get; set; }
+        public int Play { get; set; }
         public long Hash { get; set; }
         public int BlackKingFile { get; set; }
         public int BlackKingRank { get; set; }
@@ -84,6 +84,8 @@ namespace RocketTanuki
                 WhiteKingFile = move.FileTo;
                 WhiteKingRank = move.RankTo;
             }
+
+            ++Play;
         }
 
         /// <summary>
@@ -93,6 +95,8 @@ namespace RocketTanuki
         public void UndoMove(Move move)
         {
             Debug.Assert(SideToMove != move.SideToMove);
+
+            --Play;
 
             Hash ^= Zobrist.Instance.Side;
             SideToMove = SideToMove.ToOpponent();
@@ -240,7 +244,7 @@ namespace RocketTanuki
                 Hash += Zobrist.Instance.HandPiece[(int)piece];
             }
 
-            Ply = int.Parse(sfen.Substring(index));
+            Play = int.Parse(sfen.Substring(index));
         }
 
         public override String ToString()
