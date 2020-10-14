@@ -25,7 +25,7 @@ namespace RocketTanuki
 
         public override string ToString()
         {
-            return $"{(char)(SideToMove == Color.Black ? '☗' : '☖')}{(char)('１' + FileTo)}{RankToKanjiLetters[RankTo]}{PieceFrom.ToString().Trim()[0]}{(Promotion ? "成" : "")}";
+            return $"{SideToMove.ToHumanReadableString()}{(char)('１' + FileTo)}{RankToKanjiLetters[RankTo]}{PieceFrom.ToHumanReadableString().Trim()[0]}{(Promotion ? "成" : "")}";
         }
 
         // override object.Equals

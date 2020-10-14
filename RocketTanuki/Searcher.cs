@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Sources;
 using static RocketTanuki.Evaluator;
 
 namespace RocketTanuki
@@ -117,6 +118,7 @@ namespace RocketTanuki
             if (depth == 0)
             {
                 // ゲーム木の末端に到達したので、局面を評価し、返す。
+                // TODO(nodchip): qsearch()を実装する。
                 return new BestMove
                 {
                     Value = Evaluator.Instance.Evaluate(position),
@@ -124,29 +126,26 @@ namespace RocketTanuki
             }
 
             var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
+            var transpositionTableMove = found ? Move.FromUshort(position, transpositionTableEntry.Move) : null;
             if (found && depth <= transpositionTableEntry.Depth)
             {
-                return new BestMove
+                if (position.IsValid(transpositionTableMove))
                 {
-                    Value = FromTranspositionTableValue(transpositionTableEntry.Value, playFromRootNode),
-                    Move = Move.FromUshort(position, transpositionTableEntry.Move),
-                };
+                    return new BestMove
+                    {
+                        Value = FromTranspositionTableValue(transpositionTableEntry.Value, playFromRootNode),
+                        Move = transpositionTableMove,
+                    };
+                }
             }
 
+            // using fail soft with negamax:
+            var moves = MoveGenerator.Generate(position, transpositionTableMove).GetEnumerator();
             BestMove bestChildBestMove = null;
-            Move bestMove = Move.Resign;
-            bool searchPv = true;
-            Move transpositionTableMove = found ? Move.FromUshort(position, transpositionTableEntry.Move) : null;
-            foreach (var move in MoveGenerator.Generate(position, transpositionTableMove))
+            while (moves.MoveNext())
             {
-                if (!Searchers.Instance.thinking)
-                {
-                    break;
-                }
-
-                BestMove childBestMove;
                 Interlocked.Increment(ref numSearchedNodes);
-                using (var mover = new Mover(position, move))
+                using (var mover = new Mover(position, moves.Current))
                 {
                     if (!mover.IsValid())
                     {
@@ -154,56 +153,95 @@ namespace RocketTanuki
                         continue;
                     }
 
-                    if (searchPv)
+                    if (playFromRootNode == 0 && moves.Current.FileFrom == 0 && moves.Current.RankFrom == 2)
+                    {
+                        var boardString = position.ToString();
+                        Debugger.Launch();
+                    }
+
+                    bestChildBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                }
+
+                break;
+            }
+
+            if (bestChildBestMove == null)
+            {
+                // 合法手が存在しないので詰み
+                return new BestMove
+                {
+                    Value = MatedIn(playFromRootNode),
+                    Move = Move.Resign,
+                };
+            }
+
+            Debug.Assert(bestChildBestMove != null);
+            if (-bestChildBestMove.Value > alpha)
+            {
+                if (-bestChildBestMove.Value >= beta)
+                {
+                    return new BestMove
+                    {
+                        Value = -bestChildBestMove.Value,
+                        Move = moves.Current,
+                        Next = bestChildBestMove,
+                    };
+                }
+
+                alpha = -bestChildBestMove.Value;
+            }
+
+            Move bestMove = moves.Current;
+            while (moves.MoveNext())
+            {
+                BestMove childBestMove;
+                Interlocked.Increment(ref numSearchedNodes);
+                using (var mover = new Mover(position, moves.Current))
+                {
+                    if (!mover.IsValid())
+                    {
+                        // 王手を放置しているので、処理しない。
+                        continue;
+                    }
+
+                    if (playFromRootNode ==0 && moves.Current.FileFrom == 0 && moves.Current.RankFrom == 2)
+                    {
+                        var boardString = position.ToString();
+                        Debugger.Launch();
+                    }
+
+                    childBestMove = search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
+                    if (-childBestMove.Value > alpha && -childBestMove.Value < beta)
                     {
                         childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
-                    }
-                    else
-                    {
-                        childBestMove = search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
                         if (-childBestMove.Value > alpha)
                         {
-                            childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                            alpha = -childBestMove.Value;
                         }
                     }
                 }
 
-                if (-childBestMove.Value >= beta)
+                if (-childBestMove.Value > -bestChildBestMove.Value)
                 {
-                    return new BestMove
+                    if (-childBestMove.Value >= beta)
                     {
-                        Value = beta, //  fail hard beta-cutoff
-                        Move = move,
-                        Next = childBestMove,
-                    };
-                }
-
-                if (-childBestMove.Value > alpha)
-                {
-                    alpha = -childBestMove.Value; // alpha acts like max in MiniMax
-                    bestMove = move;
+                        return new BestMove
+                        {
+                            Value = -childBestMove.Value,
+                            Move = moves.Current,
+                            Next = childBestMove,
+                        };
+                    }
                     bestChildBestMove = childBestMove;
-                    searchPv = false;
+                    bestMove = moves.Current;
                 }
-            }
-
-            int value = bestMove == Move.Resign
-                // 合法手が存在しなかった=負け
-                ? MatedIn(playFromRootNode)
-                : alpha;
-
-            // Null Window Search等で指し手が見つからなかった場合に
-            // 投了の指し手を置換表に登録していまうのを防ぐハック
-            if (bestMove != Move.Resign)
-            {
-                TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(value, playFromRootNode), depth, bestMove);
             }
 
             return new BestMove
             {
                 Move = bestMove,
                 Next = bestChildBestMove,
-                Value = value,
+                Value = -bestChildBestMove.Value,
             };
         }
 
