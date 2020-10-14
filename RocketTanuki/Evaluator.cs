@@ -373,7 +373,7 @@ namespace RocketTanuki
 
                     Add(position,
                         MakeBoardPieceId(position.Board[file, rank], file, rank),
-                        MakeBoardPieceId(position.Board[file, rank].ToOpponentPiece(), 8 - file, 8 - rank));
+                        MakeBoardPieceId(position.Board[file, rank].AsOpponentPiece(), 8 - file, 8 - rank));
                 }
             }
 
@@ -384,7 +384,7 @@ namespace RocketTanuki
                 {
                     Add(position,
                         MakeHandPieceId(handPiece, numHandPieces),
-                        MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces));
+                        MakeHandPieceId(handPiece.AsOpponentPiece(), numHandPieces));
                 }
             }
         }
@@ -419,22 +419,22 @@ namespace RocketTanuki
                 // 相手の駒を取る指し手
 
                 // 持ち駒を増やす
-                var handPiece = move.PieceTo.ToOpponentHandPiece();
+                var handPiece = move.PieceTo.AsOpponentHandPiece();
                 var numHandPieces = position.HandPieces[(int)handPiece];
                 Add(position,
                     MakeHandPieceId(handPiece, numHandPieces),
-                    MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces));
+                    MakeHandPieceId(handPiece.AsOpponentPiece(), numHandPieces));
 
                 // 盤上から駒を取り除く
                 Subtract(position,
                     MakeBoardPieceId(move.PieceTo, move.FileTo, move.RankTo),
-                    MakeBoardPieceId(move.PieceTo.ToOpponentPiece(), 8 - move.FileTo, 8 - move.RankTo));
+                    MakeBoardPieceId(move.PieceTo.AsOpponentPiece(), 8 - move.FileTo, 8 - move.RankTo));
             }
 
             // 盤上に駒を置く
             Add(position,
                 MakeBoardPieceId(move.PieceFrom, move.FileTo, move.RankTo),
-                MakeBoardPieceId(move.PieceFrom.ToOpponentPiece(), 8 - move.FileTo, 8 - move.RankTo));
+                MakeBoardPieceId(move.PieceFrom.AsOpponentPiece(), 8 - move.FileTo, 8 - move.RankTo));
 
             if (move.Drop)
             {
@@ -445,14 +445,14 @@ namespace RocketTanuki
                 var numHandPieces = position.HandPieces[(int)handPiece];
                 Subtract(position,
                     MakeHandPieceId(handPiece, numHandPieces),
-                    MakeHandPieceId(handPiece.ToOpponentPiece(), numHandPieces));
+                    MakeHandPieceId(handPiece.AsOpponentPiece(), numHandPieces));
             }
             else
             {
                 // 駒を移動する指し手
                 Subtract(position,
                     MakeBoardPieceId(move.PieceFrom, move.FileFrom, move.RankFrom),
-                    MakeBoardPieceId(move.PieceFrom.ToOpponentPiece(), 8 - move.FileFrom, move.RankFrom));
+                    MakeBoardPieceId(move.PieceFrom.AsOpponentPiece(), 8 - move.FileFrom, move.RankFrom));
             }
         }
 

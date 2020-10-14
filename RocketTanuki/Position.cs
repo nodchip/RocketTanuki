@@ -46,14 +46,14 @@ namespace RocketTanuki
             if (move.PieceTo != Piece.NoPiece)
             {
                 Debug.Assert(move.PieceTo.ToColor() != SideToMove);
-                Debug.Assert(move.PieceTo.ToOpponentHandPiece().ToColor() == SideToMove);
-                ++HandPieces[(int)move.PieceTo.ToOpponentHandPiece()];
-                Hash += Zobrist.Instance.HandPiece[(int)move.PieceTo.ToOpponentHandPiece()];
+                Debug.Assert(move.PieceTo.AsOpponentHandPiece().ToColor() == SideToMove);
+                ++HandPieces[(int)move.PieceTo.AsOpponentHandPiece()];
+                Hash += Zobrist.Instance.HandPiece[(int)move.PieceTo.AsOpponentHandPiece()];
             }
 
             Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
             Board[move.FileTo, move.RankTo] = move.Promotion
-                ? Types.ToPromoted(move.PieceFrom)
+                ? Types.AsPromoted(move.PieceFrom)
                 : move.PieceFrom;
             Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
             Debug.Assert(Board[move.FileTo, move.RankTo].ToColor() == SideToMove);
@@ -149,9 +149,9 @@ namespace RocketTanuki
             if (move.PieceTo != Piece.NoPiece)
             {
                 Debug.Assert(move.PieceTo.ToColor() != SideToMove);
-                Debug.Assert(HandPieces[(int)move.PieceTo.ToOpponentHandPiece()] > 0);
-                Hash -= Zobrist.Instance.HandPiece[(int)move.PieceTo.ToOpponentHandPiece()];
-                --HandPieces[(int)move.PieceTo.ToOpponentHandPiece()];
+                Debug.Assert(HandPieces[(int)move.PieceTo.AsOpponentHandPiece()] > 0);
+                Hash -= Zobrist.Instance.HandPiece[(int)move.PieceTo.AsOpponentHandPiece()];
+                --HandPieces[(int)move.PieceTo.AsOpponentHandPiece()];
             }
         }
 
@@ -199,7 +199,7 @@ namespace RocketTanuki
                     Debug.Assert(piece != Piece.NoPiece);
                     if (promotion)
                     {
-                        piece = piece.ToPromoted();
+                        piece = piece.AsPromoted();
                         promotion = false;
                     }
                     Board[file, rank] = piece;
@@ -294,12 +294,12 @@ namespace RocketTanuki
                     if (file >= 0)
                     {
                         var piece = Board[file, rank];
-                        if (piece != piece.ToNonPromotedPiece())
+                        if (piece != piece.AsNonPromotedPiece())
                         {
                             writer.Write('+');
                         }
-                        piece = piece.ToNonPromotedPiece();
-                        writer.Write(PieceToChar[(int)piece]);
+                        piece = piece.AsNonPromotedPiece();
+                        writer.Write(piece.ToUsiChar());
                     }
                 }
 
@@ -324,7 +324,7 @@ namespace RocketTanuki
                 {
                     writer.Write(HandPieces[(int)handPiece]);
                 }
-                writer.Write(PieceToChar[(int)handPiece]);
+                writer.Write(handPiece.ToUsiChar());
                 handPieceExists = true;
             }
             if (!handPieceExists)
@@ -352,7 +352,7 @@ namespace RocketTanuki
                 writer.Write("|");
                 for (int file = BoardSize - 1; file >= 0; --file)
                 {
-                    writer.Write(PieceToString[(int)Board[file, rank]]);
+                    writer.Write(Board[file, rank]);
                     writer.Write("|");
                 }
                 writer.WriteLine();
@@ -365,7 +365,7 @@ namespace RocketTanuki
             {
                 for (int i = 0; i < HandPieces[(int)piece]; ++i)
                 {
-                    writer.Write(PieceToString[(int)piece][0]);
+                    writer.Write(piece.ToString().Trim()[0]);
                 }
             }
 
@@ -374,7 +374,7 @@ namespace RocketTanuki
             {
                 for (int i = 0; i < HandPieces[(int)piece]; ++i)
                 {
-                    writer.Write(PieceToString[(int)piece][0]);
+                    writer.Write(piece.ToString().Trim()[0]);
                 }
             }
             writer.WriteLine();

@@ -364,7 +364,7 @@ namespace RocketTanuki
         /// </summary>
         /// <param name="piece"></param>
         /// <returns></returns>
-        public static Piece ToPromoted(this Piece piece)
+        public static Piece AsPromoted(this Piece piece)
         {
             Debug.Assert(NonPromotedToPromoted[(int)piece] != Piece.NoPiece);
             return NonPromotedToPromoted[(int)piece];
@@ -396,22 +396,54 @@ namespace RocketTanuki
         /// </summary>
         /// <param name="piece"></param>
         /// <returns></returns>
-        public static Piece ToOpponentHandPiece(this Piece piece)
+        public static Piece AsOpponentHandPiece(this Piece piece)
         {
             Debug.Assert(PieceToOpponentHandPieces[(int)piece] != Piece.NoPiece);
             return PieceToOpponentHandPieces[(int)piece];
         }
 
-        public static Piece ToOpponentPiece(this Piece piece)
+        /// <summary>
+        /// 相手の駒に変換する。
+        /// </summary>
+        /// <param name="piece"></param>
+        /// <returns></returns>
+        public static Piece AsOpponentPiece(this Piece piece)
         {
             Debug.Assert(PieceToOpponentHandPieces[(int)piece] != Piece.NoPiece);
             return PieceToOpponentPieces[(int)piece];
         }
 
-        public static Piece ToNonPromotedPiece(this Piece piece)
+        /// <summary>
+        /// 不成の状態の駒に変換する。
+        /// </summary>
+        /// <param name="piece"></param>
+        /// <returns></returns>
+        public static Piece AsNonPromotedPiece(this Piece piece)
         {
             Debug.Assert(PieceToNonPromotedPieces[(int)piece] != Piece.NoPiece);
             return PieceToNonPromotedPieces[(int)piece];
+        }
+
+        /// <summary>
+        /// USIで使用される文字へ変換する。
+        /// </summary>
+        /// <param name="piece"></param>
+        /// <returns></returns>
+        public static char ToUsiChar(this Piece piece)
+        {
+            Debug.Assert(PieceToChar[(int)piece] != '\0');
+            return PieceToChar[(int)piece];
+        }
+
+        /// <summary>
+        /// 人間が読める文字列に変換する。USIとの互換性はない。
+        /// </summary>
+        /// <param name="piece"></param>
+        /// <returns></returns>
+        public static string ToString(this Piece piece)
+        {
+            Debug.Assert(PieceToString[(int)piece] != null);
+            return PieceToString[(int)piece];
         }
 
         private static Piece[] NonPromotedToPromoted = new Piece[(int)Piece.NumPieces];
@@ -517,9 +549,9 @@ namespace RocketTanuki
 
         public static Piece[] CharToPiece { get; } = new Piece[128];
 
-        public static char[] PieceToChar { get; } = new char[(int)Piece.NumPieces];
+        private static char[] PieceToChar { get; } = new char[(int)Piece.NumPieces];
 
-        public static String[] PieceToString { get; } = {
+        private static String[] PieceToString { get; } = {
             "　　",
             " 歩 ",
             " 香 ",

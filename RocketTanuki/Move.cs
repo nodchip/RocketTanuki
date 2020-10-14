@@ -25,7 +25,7 @@ namespace RocketTanuki
 
         public override string ToString()
         {
-            return $"{(char)(SideToMove == Color.Black ? '☗' : '☖')}{(char)('１' + FileTo)}{RankToKanjiLetters[RankTo]}{PieceToString[(int)PieceFrom].Trim()[0]}{(Promotion ? "成" : "")}";
+            return $"{(char)(SideToMove == Color.Black ? '☗' : '☖')}{(char)('１' + FileTo)}{RankToKanjiLetters[RankTo]}{PieceFrom.ToString().Trim()[0]}{(Promotion ? "成" : "")}";
         }
 
         // override object.Equals
@@ -86,7 +86,7 @@ namespace RocketTanuki
             string usiString = "";
             if (Drop)
             {
-                usiString += char.ToUpper(PieceToChar[(int)PieceFrom]);
+                usiString += char.ToUpper(PieceFrom.ToUsiChar());
                 usiString += "*";
             }
             else
@@ -117,7 +117,7 @@ namespace RocketTanuki
                 move.PieceFrom = CharToPiece[moveString[0]];
                 if (position.SideToMove == Color.White)
                 {
-                    move.PieceFrom = move.PieceFrom.ToOpponentHandPiece();
+                    move.PieceFrom = move.PieceFrom.AsOpponentHandPiece();
                 }
                 move.Drop = true;
             }
