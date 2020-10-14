@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using static RocketTanuki.Types;
+using static System.Math;
 
 namespace RocketTanuki
 {
@@ -11,7 +12,7 @@ namespace RocketTanuki
     public class Position
     {
         public const string StartposSfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
-        public const string MatsuriSfen = "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w GR5pnsg 1";
+        public const string MatsuriSfen = "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p 1";
         public const string MaxSfen = "8R/kSS1S1K2/4B4/9/9/9/9/9/3L1L1L1 b RBGSNLP3g3n17p 1";
 
         public const int BoardSize = 9;
@@ -238,7 +239,7 @@ namespace RocketTanuki
             {
                 HandPieces[handPieceIndex] = 0;
             }
-            int numAddedHandPieces = 1;
+            int numAddedHandPieces = 0;
             while (true)
             {
                 var ch = sfen[index++];
@@ -252,15 +253,17 @@ namespace RocketTanuki
                 }
                 else if (Char.IsDigit(ch))
                 {
-                    numAddedHandPieces = ch - '0';
+                    // 2桁の場合に対応する
+                    numAddedHandPieces *= 10;
+                    numAddedHandPieces += ch - '0';
                     continue;
                 }
 
                 var piece = CharToPiece[ch];
                 Debug.Assert(piece != Piece.NoPiece);
-                HandPieces[(int)piece] += numAddedHandPieces;
+                HandPieces[(int)piece] += Max(1, numAddedHandPieces);
                 Hash += Zobrist.Instance.HandPiece[(int)piece];
-                numAddedHandPieces = 1;
+                numAddedHandPieces = 0;
             }
 
             Play = int.Parse(sfen.Substring(index));
@@ -268,6 +271,78 @@ namespace RocketTanuki
             State = new PositionState();
         }
 
+        public String ToSfenString()
+        {
+            var writer = new StringWriter();
+
+            // 盤面
+            for (int rank = 0; rank < BoardSize; ++rank)
+            {
+                for (int file = 8; file >= 0; --file)
+                {
+                    int numNoPieces;
+                    for (numNoPieces = 0; file >= 0 && Board[file, rank] == Piece.NoPiece; --file)
+                    {
+                        ++numNoPieces;
+                    }
+
+                    if (numNoPieces > 0)
+                    {
+                        writer.Write(numNoPieces);
+                    }
+
+                    if (file >= 0)
+                    {
+                        var piece = Board[file, rank];
+                        if (piece != piece.ToNonPromotedPiece())
+                        {
+                            writer.Write('+');
+                        }
+                        piece = piece.ToNonPromotedPiece();
+                        writer.Write(PieceToChar[(int)piece]);
+                    }
+                }
+
+                if (rank < 8)
+                {
+                    writer.Write("/");
+                }
+            }
+
+            // 手番
+            writer.Write(SideToMove == Color.Black ? " b " : " w ");
+
+            // 持ち駒
+            bool handPieceExists = false;
+            foreach (var handPiece in HandPieceTypes)
+            {
+                if (HandPieces[(int)handPiece] == 0)
+                {
+                    continue;
+                }
+                else if (HandPieces[(int)handPiece] > 1)
+                {
+                    writer.Write(HandPieces[(int)handPiece]);
+                }
+                writer.Write(PieceToChar[(int)handPiece]);
+                handPieceExists = true;
+            }
+            if (!handPieceExists)
+            {
+                writer.Write("-");
+            }
+
+            //手数
+            writer.Write(" ");
+            writer.Write(Play);
+
+            return writer.ToString();
+        }
+
+        /// <summary>
+        /// 局面を文字列化する。sfenではなく独自形式とする。
+        /// </summary>
+        /// <returns></returns>
         public override String ToString()
         {
             var writer = new StringWriter();
@@ -422,6 +497,11 @@ namespace RocketTanuki
 
             return true;
         }
+
+        private static Piece[] HandPieceTypes = new[] {
+                Piece.BlackRook, Piece.BlackBishop, Piece.BlackGold,Piece.BlackSilver,Piece.BlackKnight,Piece.BlackLance,Piece.BlackPawn,
+                Piece.WhiteRook, Piece.WhiteBishop, Piece.WhiteGold,Piece.WhiteSilver,Piece.WhiteKnight,Piece.WhiteLance,Piece.WhitePawn,
+            };
     }
 
     public class PositionState

@@ -408,6 +408,12 @@ namespace RocketTanuki
             return PieceToOpponentPieces[(int)piece];
         }
 
+        public static Piece ToNonPromotedPiece(this Piece piece)
+        {
+            Debug.Assert(PieceToNonPromotedPieces[(int)piece] != Piece.NoPiece);
+            return PieceToNonPromotedPieces[(int)piece];
+        }
+
         private static Piece[] NonPromotedToPromoted = new Piece[(int)Piece.NumPieces];
 
         private static Piece[] PieceToOpponentHandPieces = {
@@ -473,6 +479,39 @@ namespace RocketTanuki
             Piece.BlackPromotedSilver,
             Piece.BlackHorse,
             Piece.BlackDragon,
+            Piece.NumPieces,
+        };
+
+        private static Piece[] PieceToNonPromotedPieces = {
+            Piece.NoPiece,
+            Piece.BlackPawn,
+            Piece.BlackLance,
+            Piece.BlackKnight,
+            Piece.BlackSilver,
+            Piece.BlackGold,
+            Piece.BlackBishop,
+            Piece.BlackRook,
+            Piece.BlackKing,
+            Piece.BlackPawn,
+            Piece.BlackLance,
+            Piece.BlackKnight,
+            Piece.BlackSilver,
+            Piece.BlackBishop,
+            Piece.BlackRook,
+            Piece.WhitePawn,
+            Piece.WhiteLance,
+            Piece.WhiteKnight,
+            Piece.WhiteSilver,
+            Piece.WhiteGold,
+            Piece.WhiteBishop,
+            Piece.WhiteRook,
+            Piece.WhiteKing,
+            Piece.WhitePawn,
+            Piece.WhiteLance,
+            Piece.WhiteKnight,
+            Piece.WhiteSilver,
+            Piece.WhiteBishop,
+            Piece.WhiteRook,
             Piece.NumPieces,
         };
 

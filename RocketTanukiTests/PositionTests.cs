@@ -24,6 +24,7 @@ namespace RocketTanukiTests
             }
         }
 
+        [TestMethod]
         public void Position_King()
         {
             var position = new Position();
@@ -33,6 +34,18 @@ namespace RocketTanukiTests
             Assert.AreEqual(8, position.BlackKingRank);
             Assert.AreEqual(4, position.WhiteKingFile);
             Assert.AreEqual(0, position.WhiteKingRank);
+        }
+
+        [TestMethod]
+        public void Position_ToSfenString()
+        {
+            foreach (var expected in new[] { Position.StartposSfen, Position.MatsuriSfen, Position.MaxSfen })
+            {
+                var position = new Position();
+                position.Set(expected);
+                var actual = position.ToSfenString();
+                Assert.AreEqual(expected, actual);
+            }
         }
     }
 }
