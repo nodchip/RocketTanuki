@@ -359,11 +359,6 @@ namespace RocketTanuki
             return color == Color.Black ? Color.White : Color.Black;
         }
 
-        public static string ToHumanReadableString(this Color color)
-        {
-            return color == Color.Black ? "☗" : "☖";
-        }
-
         /// <summary>
         /// 与えられた駒の種類を、成り駒の種類に変換する。
         /// </summary>
@@ -445,7 +440,7 @@ namespace RocketTanuki
         /// </summary>
         /// <param name="piece"></param>
         /// <returns></returns>
-        public static string ToHumanReadableString(this Piece piece)
+        public static string ToString(this Piece piece)
         {
             Debug.Assert(PieceToString[(int)piece] != null);
             return PieceToString[(int)piece];
