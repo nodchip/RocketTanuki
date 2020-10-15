@@ -108,6 +108,19 @@ namespace RocketTanuki
 
         public static Move FromUsiString(Position position, string moveString)
         {
+            if (moveString == "resign")
+            {
+                return Move.Resign;
+            }
+            else if (moveString == "win")
+            {
+                return Move.Win;
+            }
+            else if (moveString == "none")
+            {
+                return Move.None;
+            }
+
             var move = new Move();
             if (moveString[1] == '*')
             {
@@ -153,6 +166,10 @@ namespace RocketTanuki
             {
                 return Win16;
             }
+            else if (this == None)
+            {
+                return None16;
+            }
 
             // 0...6ビット目: 移動先のマス
             // 7...13ビット目: 駒を移動する指し手の場合は移動元のマス、駒を打つ指し手の場合はPiece
@@ -180,6 +197,10 @@ namespace RocketTanuki
             else if (move16 == Win16)
             {
                 return Win;
+            }
+            else if (move16 == None16)
+            {
+                return None;
             }
 
             int to = move16 & ((1 << 7) - 1);
@@ -212,9 +233,16 @@ namespace RocketTanuki
             FileTo = 3,
         };
 
+        public static Move None = new Move
+        {
+            FileFrom = 4,
+            FileTo = 4,
+        };
+
         private const ushort Null16 = (1 << 7) + 1;
         private const ushort Resign16 = (2 << 7) + 2;
         private const ushort Win16 = (3 << 7) + 3;
+        private const ushort None16 = (4 << 7) + 4;
 
         private static string[] RankToKanjiLetters = { "一", "二", "三", "四", "五", "六", "七", "八", "九" };
     }

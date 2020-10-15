@@ -33,32 +33,36 @@ namespace RocketTanuki
 
             thinking = true;
 
-            searchers.Clear();
-            searchTasks.Clear();
-
-            TranspositionTable.Instance.NewSearch();
-
+            BestMove bestMove = Book.Instance.Select(position);
+            if (bestMove == null)
             {
-                var searcher = new Searcher(0);
-                searchers.Add(searcher);
-                searchTasks.Add(Task.Run(() => { return searcher.Search(position); }));
-            }
+                searchers.Clear();
+                searchTasks.Clear();
 
-            // 全ての探索タスクが終了するまで待つ
-            WaitAllSearchTasks();
+                TranspositionTable.Instance.NewSearch();
 
-            // 指し手を選択する
-            BestMove bestMove = new BestMove
-            {
-                Value = MatedIn(1),
-                Move = Move.Resign,
-            };
-            foreach (var task in searchTasks)
-            {
-                var bestMoveCandidate = task.Result;
-                if (bestMove.Value < bestMoveCandidate.Value)
                 {
-                    bestMove = bestMoveCandidate;
+                    var searcher = new Searcher(0);
+                    searchers.Add(searcher);
+                    searchTasks.Add(Task.Run(() => { return searcher.Search(position); }));
+                }
+
+                // 全ての探索タスクが終了するまで待つ
+                WaitAllSearchTasks();
+
+                // 指し手を選択する
+                bestMove = new BestMove
+                {
+                    Value = MatedIn(1),
+                    Move = Move.Resign,
+                };
+                foreach (var task in searchTasks)
+                {
+                    var bestMoveCandidate = task.Result;
+                    if (bestMove.Value < bestMoveCandidate.Value)
+                    {
+                        bestMove = bestMoveCandidate;
+                    }
                 }
             }
 
@@ -77,7 +81,11 @@ namespace RocketTanuki
             {
                 writer.Write("resign");
             }
-            if (bestMove.Next != null && bestMove.Next.Move != null && bestMove.Next.Move != Move.Resign && bestMove.Next.Move != Move.Win)
+            if (bestMove.Next != null &&
+                bestMove.Next.Move != null &&
+                bestMove.Next.Move != Move.Resign &&
+                bestMove.Next.Move != Move.Win &&
+                bestMove.Next.Move != Move.None)
             {
                 writer.Write(" ponder ");
                 writer.Write(bestMove.Next.Move.ToUsiString());
