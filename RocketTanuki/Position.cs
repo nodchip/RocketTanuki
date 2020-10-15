@@ -352,7 +352,7 @@ namespace RocketTanuki
                 writer.Write("|");
                 for (int file = BoardSize - 1; file >= 0; --file)
                 {
-                    writer.Write(Board[file, rank]);
+                    writer.Write(Board[file, rank].ToHumanReadableString());
                     writer.Write("|");
                 }
                 writer.WriteLine();
@@ -365,7 +365,7 @@ namespace RocketTanuki
             {
                 for (int i = 0; i < HandPieces[(int)piece]; ++i)
                 {
-                    writer.Write(piece.ToString().Trim()[0]);
+                    writer.Write(piece.ToHumanReadableString().Trim()[0]);
                 }
             }
 
@@ -374,7 +374,7 @@ namespace RocketTanuki
             {
                 for (int i = 0; i < HandPieces[(int)piece]; ++i)
                 {
-                    writer.Write(piece.ToString().Trim()[0]);
+                    writer.Write(piece.ToHumanReadableString().Trim()[0]);
                 }
             }
             writer.WriteLine();

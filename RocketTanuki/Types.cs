@@ -354,9 +354,24 @@ namespace RocketTanuki
             PieceToChar[(int)Piece.WhitePawn] = 'p';
         }
 
+        /// <summary>
+        /// 相手側の手番へと変換する。
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
         public static Color ToOpponent(this Color color)
         {
             return color == Color.Black ? Color.White : Color.Black;
+        }
+
+        /// <summary>
+        /// 人間にとって読みやすい文字列へ変換する。
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public static string ToHumanReadableString(this Color color)
+        {
+            return color == Color.Black ? "☗" : "☖";
         }
 
         /// <summary>
@@ -440,7 +455,7 @@ namespace RocketTanuki
         /// </summary>
         /// <param name="piece"></param>
         /// <returns></returns>
-        public static string ToString(this Piece piece)
+        public static string ToHumanReadableString(this Piece piece)
         {
             Debug.Assert(PieceToString[(int)piece] != null);
             return PieceToString[(int)piece];
