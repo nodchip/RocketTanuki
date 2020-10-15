@@ -98,14 +98,9 @@ namespace RocketTanuki
         /// <returns></returns>
         private BestMove Search(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
-            SelectiveDepth = Max(SelectiveDepth, playFromRootNode);
-
-            if (!Searchers.Instance.thinking)
+            if (depth == 0)
             {
-                return new BestMove
-                {
-                    Value = DrawValue,
-                };
+                return QuiescenceSearch(position, alpha, beta, depth, playFromRootNode);
             }
 
             if (threadId == 0 && (callCount++) % 4096 == 0)
@@ -118,10 +113,7 @@ namespace RocketTanuki
                 }
             }
 
-            if (depth == 0)
-            {
-                return QuiescenceSearch(position, alpha, beta, depth, playFromRootNode);
-            }
+            SelectiveDepth = Max(SelectiveDepth, playFromRootNode);
 
             var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
             if (found && depth <= transpositionTableEntry.Depth)
@@ -140,16 +132,6 @@ namespace RocketTanuki
             Move transpositionTableMove = found ? Move.FromUshort(position, transpositionTableEntry.Move) : null;
             foreach (var move in MoveGenerator.Generate(position, transpositionTableMove, false))
             {
-                // TODO(nodchip): 探索を終えた直後に判定する
-                if (!Searchers.Instance.thinking)
-                {
-                    break;
-                }
-                if (!Searchers.Instance.thinking)
-                {
-                    break;
-                }
-
                 BestMove childBestMove;
                 Interlocked.Increment(ref numSearchedNodes);
                 using (var mover = new Mover(position, move))
@@ -172,6 +154,16 @@ namespace RocketTanuki
                             childBestMove = Search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                         }
                     }
+                }
+
+                if (!Searchers.Instance.thinking)
+                {
+                    return new BestMove
+                    {
+                        Move = bestMove,
+                        Next = bestChildBestMove,
+                        Value = 0,
+                    };
                 }
 
                 if (-childBestMove.Value >= beta)
@@ -225,7 +217,27 @@ namespace RocketTanuki
         /// <returns></returns>
         private BestMove QuiescenceSearch(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
+            if (threadId == 0 && (callCount++) % 4096 == 0)
+            {
+                // TimeManager.IsThinking()は重いと思うので、
+                // 定期的に結果を確認し、Searchers.thinkingに代入する。
+                if (!TimeManager.Instance.IsThinking())
+                {
+                    Searchers.Instance.thinking = false;
+                }
+            }
+
             SelectiveDepth = Max(SelectiveDepth, playFromRootNode);
+
+            var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
+            if (found && depth <= transpositionTableEntry.Depth)
+            {
+                return new BestMove
+                {
+                    Value = FromTranspositionTableValue(transpositionTableEntry.Value, playFromRootNode),
+                    Move = Move.FromUshort(position, transpositionTableEntry.Move),
+                };
+            }
 
             int stand_pat = Evaluator.Instance.Evaluate(position);
             if (stand_pat >= beta)
@@ -238,28 +250,11 @@ namespace RocketTanuki
             if (alpha < stand_pat)
                 alpha = stand_pat;
 
-            var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
-            if (found && depth <= transpositionTableEntry.Depth)
-            {
-                return new BestMove
-                {
-                    Value = FromTranspositionTableValue(transpositionTableEntry.Value, playFromRootNode),
-                    Move = Move.FromUshort(position, transpositionTableEntry.Move),
-                };
-            }
-
             BestMove bestChildBestMove = null;
             Move bestMove = Move.None;
-            // TODO(nodchip): 置換表を参照する
             bool searchPv = true;
             foreach (var move in MoveGenerator.Generate(position, null, true))
             {
-                // TODO(nodchip): 探索を終えた直後に判定する
-                if (!Searchers.Instance.thinking)
-                {
-                    break;
-                }
-
                 BestMove childBestMove;
                 Interlocked.Increment(ref numSearchedNodes);
                 using (var mover = new Mover(position, move))
