@@ -38,11 +38,9 @@ namespace RocketTanuki
 
             TranspositionTable.Instance.NewSearch();
 
-            {
-                var searcher = new Searcher(0);
-                searchers.Add(searcher);
-                searchTasks.Add(Task.Run(() => { return searcher.Search(position); }));
-            }
+            var searcher = new Searcher(0);
+            searchers.Add(searcher);
+            searchTasks.Add(Task.Run(() => { return searcher.Search(position); }));
 
             // 全ての探索タスクが終了するまで待つ
             WaitAllSearchTasks();
@@ -63,7 +61,7 @@ namespace RocketTanuki
             }
 
             // info pvを出力する
-            Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue);
+            Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue, searcher.SelectiveDepth);
 
             // bestmoveを出力する
             var writer = new StringWriter();

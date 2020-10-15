@@ -10,7 +10,7 @@ namespace RocketTanuki
 {
     public class Usi
     {
-        public static void OutputPv(BestMove bestMove, int alpha, int beta)
+        public static void OutputPv(BestMove bestMove, int alpha, int beta, int selectiveDepth)
         {
             var writer = new StringWriter();
             writer.Write("info");
@@ -18,6 +18,10 @@ namespace RocketTanuki
             // depth
             writer.Write(" depth ");
             writer.Write(bestMove.Depth);
+
+            // seldepth
+            writer.Write(" seldepth ");
+            writer.Write(selectiveDepth);
 
             // time
             writer.Write(" time ");

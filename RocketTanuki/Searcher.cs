@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static RocketTanuki.Evaluator;
+using static System.Math;
 
 namespace RocketTanuki
 {
@@ -25,6 +26,7 @@ namespace RocketTanuki
                 Depth = 1,
             };
             numSearchedNodes = 0;
+            SelectiveDepth = 0;
 
             for (int depth = 1; depth < MaxPlay && Searchers.Instance.thinking; ++depth)
             {
@@ -47,7 +49,7 @@ namespace RocketTanuki
                     if ((bestMoveCandidate.Value <= alpha || beta <= bestMoveCandidate.Value)
                         && TimeManager.Instance.ElapsedMs() > 3000)
                     {
-                        Usi.OutputPv(bestMoveCandidate, alpha, beta);
+                        Usi.OutputPv(bestMoveCandidate, alpha, beta, SelectiveDepth);
                     }
 
                     if (!Searchers.Instance.thinking)
@@ -80,7 +82,7 @@ namespace RocketTanuki
                     bestMove = bestMoveCandidate;
                 }
 
-                Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue);
+                Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue, SelectiveDepth);
             }
             return bestMove;
         }
@@ -96,6 +98,8 @@ namespace RocketTanuki
         /// <returns></returns>
         private BestMove Search(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
+            SelectiveDepth = Max(SelectiveDepth, playFromRootNode);
+
             if (!Searchers.Instance.thinking)
             {
                 return new BestMove
@@ -223,6 +227,8 @@ namespace RocketTanuki
         /// <returns></returns>
         private BestMove QuiescenceSearch(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
+            SelectiveDepth = Max(SelectiveDepth, playFromRootNode);
+
             int stand_pat = Evaluator.Instance.Evaluate(position);
             if (stand_pat >= beta)
             {
@@ -233,6 +239,16 @@ namespace RocketTanuki
             }
             if (alpha < stand_pat)
                 alpha = stand_pat;
+
+            var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
+            if (found && depth <= transpositionTableEntry.Depth)
+            {
+                return new BestMove
+                {
+                    Value = FromTranspositionTableValue(transpositionTableEntry.Value, playFromRootNode),
+                    Move = Move.FromUshort(position, transpositionTableEntry.Move),
+                };
+            }
 
             BestMove bestChildBestMove = null;
             Move bestMove = null;
@@ -288,6 +304,8 @@ namespace RocketTanuki
                     searchPv = true;
                 }
             }
+
+            TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(alpha, playFromRootNode), depth, bestMove);
 
             return new BestMove
             {
@@ -346,5 +364,6 @@ namespace RocketTanuki
         private int threadId;
         private int callCount = 0;
         public long numSearchedNodes = 0;
+        public int SelectiveDepth { get; set; } = 0;
     }
 }
