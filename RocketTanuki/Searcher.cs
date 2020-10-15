@@ -237,7 +237,7 @@ namespace RocketTanuki
             BestMove bestChildBestMove = null;
             Move bestMove = null;
             // TODO(nodchip): 置換表を参照する
-            // TODO(nodchip): PVSに変更する
+            bool searchPv = true;
             foreach (var move in MoveGenerator.Generate(position, null, true))
             {
                 // TODO(nodchip): 探索を終えた直後に判定する
@@ -256,8 +256,18 @@ namespace RocketTanuki
                         continue;
                     }
 
-                    // TODO(nodchip): PVSに変更する
-                    childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                    if (searchPv)
+                    {
+                        childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                    }
+                    else
+                    {
+                        childBestMove = search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
+                        if (-childBestMove.Value > alpha)
+                        {
+                            childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                        }
+                    }
                 }
 
                 if (-childBestMove.Value >= beta)
@@ -275,6 +285,7 @@ namespace RocketTanuki
                     alpha = -childBestMove.Value; // alpha acts like max in MiniMax
                     bestMove = move;
                     bestChildBestMove = childBestMove;
+                    searchPv = true;
                 }
             }
 
