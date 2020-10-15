@@ -96,11 +96,12 @@ namespace RocketTanuki
         /// <returns></returns>
         private BestMove search(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
-            if (!Searchers.Instance.thinking)
+            if (depth == 0)
             {
+                // ゲーム木の末端に到達したので、局面を評価し、返す。
                 return new BestMove
                 {
-                    Value = DrawValue,
+                    Value = Evaluator.Instance.Evaluate(position),
                 };
             }
 
@@ -114,17 +115,12 @@ namespace RocketTanuki
                 }
             }
 
-            if (depth == 0)
-            {
-                // ゲーム木の末端に到達したので、局面を評価し、返す。
-                return new BestMove
-                {
-                    Value = Evaluator.Instance.Evaluate(position),
-                };
-            }
-
             var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
-            if (found && depth <= transpositionTableEntry.Depth)
+            if (found
+                && depth <= transpositionTableEntry.Depth
+                && (transpositionTableEntry.Value >= beta
+                    ? (transpositionTableEntry.Bound & (int)Bound.Lower) != 0
+                    : (transpositionTableEntry.Bound & (int)Bound.Upper) != 0))
             {
                 return new BestMove
                 {
@@ -168,8 +164,20 @@ namespace RocketTanuki
                     }
                 }
 
+                if (!Searchers.Instance.thinking)
+                {
+                    return new BestMove
+                    {
+                        Value = DrawValue,
+                        Move = bestMove,
+                        Next = bestChildBestMove,
+                    };
+                }
+
                 if (-childBestMove.Value >= beta)
                 {
+                    TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(beta, playFromRootNode), depth, bestMove, Bound.Lower);
+
                     return new BestMove
                     {
                         Value = beta, //  fail hard beta-cutoff
@@ -196,7 +204,7 @@ namespace RocketTanuki
             // 投了の指し手を置換表に登録していまうのを防ぐハック
             if (bestMove != Move.Resign)
             {
-                TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(value, playFromRootNode), depth, bestMove);
+                TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(value, playFromRootNode), depth, bestMove, Bound.Exact);
             }
 
             return new BestMove

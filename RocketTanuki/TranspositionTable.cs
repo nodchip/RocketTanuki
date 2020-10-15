@@ -7,11 +7,20 @@ using System.Threading.Tasks;
 
 namespace RocketTanuki
 {
+    public enum Bound
+    {
+        None = 0,
+        Upper = 1,
+        Lower = 2,
+        Exact = 3,
+    }
+
     public struct TranspositionTableEntry
     {
         public long Hash { get; set; }
         public ushort Move { get; set; }
-        public ushort Depth { get; set; }
+        public byte Depth { get; set; }
+        public byte Bound { get; set; }
         public ushort Generation { get; set; }
         public short Value { get; set; }
     }
@@ -33,7 +42,7 @@ namespace RocketTanuki
             generation = (generation + 1) & 0xffff;
         }
 
-        public void Save(long hash, int value, int depth, Move move)
+        public void Save(long hash, int value, int depth, Move move, Bound bound)
         {
             long numEntries = Entries.LongLength;
             long mask = numEntries - 1;
@@ -48,7 +57,8 @@ namespace RocketTanuki
 
             Entries[index].Hash = hash;
             Entries[index].Move = move.ToUshort();
-            Entries[index].Depth = (ushort)depth;
+            Entries[index].Depth = (byte)depth;
+            Entries[index].Bound = (byte)bound;
             Entries[index].Generation = (ushort)generation;
             Entries[index].Value = (short)value;
         }
