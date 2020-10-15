@@ -75,7 +75,11 @@ namespace RocketTanuki
             {
                 writer.Write("resign");
             }
-            if (bestMove.Next != null && bestMove.Next.Move != null && bestMove.Next.Move != Move.Resign && bestMove.Next.Move != Move.Win)
+            if (bestMove.Next != null
+                && bestMove.Next.Move != null
+                && bestMove.Next.Move != Move.Resign
+                && bestMove.Next.Move != Move.Win
+                && bestMove.Next.Move != Move.None)
             {
                 writer.Write(" ponder ");
                 writer.Write(bestMove.Next.Move.ToUsiString());

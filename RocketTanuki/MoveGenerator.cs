@@ -25,6 +25,7 @@ namespace RocketTanuki
             if (transpositionTableMove != null
                 && transpositionTableMove != Move.Resign
                 && transpositionTableMove != Move.Win
+                && transpositionTableMove != Move.None
                 && position.IsValid(transpositionTableMove))
             {
                 // 置換表に登録されている指し手を優先的に返す
