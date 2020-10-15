@@ -49,6 +49,8 @@ namespace RocketTanuki
                 Debug.Assert(move.PieceTo.AsOpponentHandPiece().ToColor() == SideToMove);
                 ++HandPieces[(int)move.PieceTo.AsOpponentHandPiece()];
                 Hash += Zobrist.Instance.HandPiece[(int)move.PieceTo.AsOpponentHandPiece()];
+
+                BitBoards[(int)move.PieceTo.ToColor()] &= ~BitBoard.OneBits[move.FileTo * BoardSize + move.RankTo];
             }
 
             Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
@@ -57,6 +59,7 @@ namespace RocketTanuki
                 : move.PieceFrom;
             Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
             Debug.Assert(Board[move.FileTo, move.RankTo].ToColor() == SideToMove);
+            BitBoards[(int)move.PieceFrom.ToColor()] |= BitBoard.OneBits[move.FileTo * BoardSize + move.RankTo];
 
             if (move.Drop)
             {
@@ -72,6 +75,7 @@ namespace RocketTanuki
                 Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
                 Board[move.FileFrom, move.RankFrom] = Piece.NoPiece;
                 Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
+                BitBoards[(int)move.PieceFrom.ToColor()] &= ~BitBoard.OneBits[move.FileFrom * BoardSize + move.RankFrom];
             }
 
             SideToMove = SideToMove.ToOpponent();
@@ -136,11 +140,13 @@ namespace RocketTanuki
             {
                 // 駒を移動する指し手
                 Debug.Assert(move.PieceFrom.ToColor() == SideToMove);
+                BitBoards[(int)move.PieceFrom.ToColor()] |= BitBoard.OneBits[move.FileFrom * BoardSize + move.RankFrom];
                 Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
                 Board[move.FileFrom, move.RankFrom] = move.PieceFrom;
                 Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
             }
 
+            BitBoards[(int)move.PieceFrom.ToColor()] &= ~BitBoard.OneBits[move.FileTo * BoardSize + move.RankTo];
             Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
             Board[move.FileTo, move.RankTo] = move.PieceTo;
             Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
@@ -150,6 +156,7 @@ namespace RocketTanuki
             {
                 Debug.Assert(move.PieceTo.ToColor() != SideToMove);
                 Debug.Assert(HandPieces[(int)move.PieceTo.AsOpponentHandPiece()] > 0);
+                BitBoards[(int)move.PieceTo.ToColor()] |= BitBoard.OneBits[move.FileTo * BoardSize + move.RankTo];
                 Hash -= Zobrist.Instance.HandPiece[(int)move.PieceTo.AsOpponentHandPiece()];
                 --HandPieces[(int)move.PieceTo.AsOpponentHandPiece()];
             }
@@ -161,6 +168,9 @@ namespace RocketTanuki
         /// <param name="sfen"></param>
         public void Set(string sfen)
         {
+            BitBoards[0] = new BitBoard();
+            BitBoards[1] = new BitBoard();
+
             // 盤面
             int file = BoardSize - 1;
             int rank = 0;
@@ -204,6 +214,7 @@ namespace RocketTanuki
                     }
                     Board[file, rank] = piece;
                     Hash += Zobrist.Instance.PieceSquare[(int)piece, file, rank];
+                    BitBoards[(int)piece.ToColor()] |= BitBoard.OneBits[file * BoardSize + rank];
 
                     if (piece == Piece.BlackKing)
                     {
@@ -498,6 +509,8 @@ namespace RocketTanuki
             return true;
         }
 
+        // 先手と後手の駒が置かれているマスの集合を表すビットボード
+        public BitBoard[] BitBoards { get; } = new[] { new BitBoard(), new BitBoard() };
         private static Piece[] HandPieceTypes = new[] {
                 Piece.BlackRook, Piece.BlackBishop, Piece.BlackGold,Piece.BlackSilver,Piece.BlackKnight,Piece.BlackLance,Piece.BlackPawn,
                 Piece.WhiteRook, Piece.WhiteBishop, Piece.WhiteGold,Piece.WhiteSilver,Piece.WhiteKnight,Piece.WhiteLance,Piece.WhitePawn,
