@@ -74,7 +74,7 @@ namespace RocketTanuki
                 Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
             }
 
-            SideToMove = SideToMove.AsOpponent();
+            SideToMove = SideToMove.ToOpponent();
             Hash ^= Zobrist.Instance.Side;
 
             if (move.PieceFrom == Piece.BlackKing)
@@ -112,7 +112,7 @@ namespace RocketTanuki
             --Play;
 
             Hash ^= Zobrist.Instance.Side;
-            SideToMove = SideToMove.AsOpponent();
+            SideToMove = SideToMove.ToOpponent();
 
             if (move.PieceFrom == Piece.BlackKing)
             {

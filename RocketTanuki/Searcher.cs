@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static RocketTanuki.Evaluator;
-using static System.Math;
 
 namespace RocketTanuki
 {
@@ -26,7 +25,6 @@ namespace RocketTanuki
                 Depth = 1,
             };
             numSearchedNodes = 0;
-            SelectiveDepth = 0;
 
             for (int depth = 1; depth < MaxPlay && Searchers.Instance.thinking; ++depth)
             {
@@ -44,12 +42,12 @@ namespace RocketTanuki
                 BestMove bestMoveCandidate;
                 while (true)
                 {
-                    bestMoveCandidate = Search(position, alpha, beta, depth, 0);
+                    bestMoveCandidate = search(position, alpha, beta, depth, 0);
                     bestMoveCandidate.Depth = depth;
                     if ((bestMoveCandidate.Value <= alpha || beta <= bestMoveCandidate.Value)
                         && TimeManager.Instance.ElapsedMs() > 3000)
                     {
-                        Usi.OutputPv(bestMoveCandidate, alpha, beta, SelectiveDepth);
+                        Usi.OutputPv(bestMoveCandidate, alpha, beta);
                     }
 
                     if (!Searchers.Instance.thinking)
@@ -82,7 +80,7 @@ namespace RocketTanuki
                     bestMove = bestMoveCandidate;
                 }
 
-                Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue, SelectiveDepth);
+                Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue);
             }
             return bestMove;
         }
@@ -96,11 +94,14 @@ namespace RocketTanuki
         /// <param name="depth"></param>
         /// <param name="playFromRootNode">Root局面からの手数</param>
         /// <returns></returns>
-        private BestMove Search(Position position, int alpha, int beta, int depth, int playFromRootNode)
+        private BestMove search(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
-            if (depth == 0)
+            if (!Searchers.Instance.thinking)
             {
-                return QuiescenceSearch(position, alpha, beta, depth, playFromRootNode);
+                return new BestMove
+                {
+                    Value = DrawValue,
+                };
             }
 
             if (threadId == 0 && (callCount++) % 4096 == 0)
@@ -113,7 +114,14 @@ namespace RocketTanuki
                 }
             }
 
-            SelectiveDepth = Max(SelectiveDepth, playFromRootNode);
+            if (depth == 0)
+            {
+                // ゲーム木の末端に到達したので、局面を評価し、返す。
+                return new BestMove
+                {
+                    Value = Evaluator.Instance.Evaluate(position),
+                };
+            }
 
             var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
             if (found && depth <= transpositionTableEntry.Depth)
@@ -126,12 +134,16 @@ namespace RocketTanuki
             }
 
             BestMove bestChildBestMove = null;
-            // TODO(nodchip): Move.Noneに変更する。
             Move bestMove = Move.Resign;
             bool searchPv = true;
             Move transpositionTableMove = found ? Move.FromUshort(position, transpositionTableEntry.Move) : null;
-            foreach (var move in MoveGenerator.Generate(position, transpositionTableMove, false))
+            foreach (var move in MoveGenerator.Generate(position, transpositionTableMove))
             {
+                if (!Searchers.Instance.thinking)
+                {
+                    break;
+                }
+
                 BestMove childBestMove;
                 Interlocked.Increment(ref numSearchedNodes);
                 using (var mover = new Mover(position, move))
@@ -144,26 +156,16 @@ namespace RocketTanuki
 
                     if (searchPv)
                     {
-                        childBestMove = Search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                        childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                     }
                     else
                     {
-                        childBestMove = Search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
+                        childBestMove = search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
                         if (-childBestMove.Value > alpha)
                         {
-                            childBestMove = Search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                            childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                         }
                     }
-                }
-
-                if (!Searchers.Instance.thinking)
-                {
-                    return new BestMove
-                    {
-                        Move = bestMove,
-                        Next = bestChildBestMove,
-                        Value = 0,
-                    };
                 }
 
                 if (-childBestMove.Value >= beta)
@@ -192,7 +194,6 @@ namespace RocketTanuki
 
             // Null Window Search等で指し手が見つからなかった場合に
             // 投了の指し手を置換表に登録していまうのを防ぐハック
-            // TODO(nodchip): 合法手が存在しない場合の条件分岐を整理する。
             if (bestMove != Move.Resign)
             {
                 TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(value, playFromRootNode), depth, bestMove);
@@ -203,108 +204,6 @@ namespace RocketTanuki
                 Move = bestMove,
                 Next = bestChildBestMove,
                 Value = value,
-            };
-        }
-
-        /// <summary>
-        /// Quiescence Search - Chessprogramming wiki https://www.chessprogramming.org/Quiescence_Search
-        /// </summary>
-        /// <param name="position"></param>
-        /// <param name="alpha"></param>
-        /// <param name="beta"></param>
-        /// <param name="depth"></param>
-        /// <param name="playFromRootNode"></param>
-        /// <returns></returns>
-        private BestMove QuiescenceSearch(Position position, int alpha, int beta, int depth, int playFromRootNode)
-        {
-            if (threadId == 0 && (callCount++) % 4096 == 0)
-            {
-                // TimeManager.IsThinking()は重いと思うので、
-                // 定期的に結果を確認し、Searchers.thinkingに代入する。
-                if (!TimeManager.Instance.IsThinking())
-                {
-                    Searchers.Instance.thinking = false;
-                }
-            }
-
-            SelectiveDepth = Max(SelectiveDepth, playFromRootNode);
-
-            var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
-            if (found && 0 <= transpositionTableEntry.Depth)
-            {
-                return new BestMove
-                {
-                    Value = FromTranspositionTableValue(transpositionTableEntry.Value, playFromRootNode),
-                    Move = Move.FromUshort(position, transpositionTableEntry.Move),
-                };
-            }
-
-            int stand_pat = Evaluator.Instance.Evaluate(position);
-            if (stand_pat >= beta)
-            {
-                return new BestMove
-                {
-                    Value = beta,
-                };
-            }
-            if (alpha < stand_pat)
-                alpha = stand_pat;
-
-            BestMove bestChildBestMove = null;
-            Move bestMove = Move.None;
-            bool searchPv = true;
-            foreach (var move in MoveGenerator.Generate(position, null, true))
-            {
-                BestMove childBestMove;
-                Interlocked.Increment(ref numSearchedNodes);
-                using (var mover = new Mover(position, move))
-                {
-                    if (!mover.IsValid())
-                    {
-                        // 王手を放置しているので、処理しない。
-                        continue;
-                    }
-
-                    if (searchPv)
-                    {
-                        childBestMove = QuiescenceSearch(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
-                    }
-                    else
-                    {
-                        childBestMove = QuiescenceSearch(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
-                        if (-childBestMove.Value > alpha)
-                        {
-                            childBestMove = QuiescenceSearch(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
-                        }
-                    }
-                }
-
-                if (-childBestMove.Value >= beta)
-                {
-                    return new BestMove
-                    {
-                        Value = beta, //  fail hard beta-cutoff
-                        Move = move,
-                        Next = childBestMove,
-                    };
-                }
-
-                if (-childBestMove.Value > alpha)
-                {
-                    alpha = -childBestMove.Value; // alpha acts like max in MiniMax
-                    bestMove = move;
-                    bestChildBestMove = childBestMove;
-                    searchPv = true;
-                }
-            }
-
-            TranspositionTable.Instance.Save(position.Hash, ToTranspositionTableValue(alpha, playFromRootNode), depth, bestMove);
-
-            return new BestMove
-            {
-                Move = bestMove,
-                Next = bestChildBestMove,
-                Value = alpha,
             };
         }
 
@@ -357,6 +256,5 @@ namespace RocketTanuki
         private int threadId;
         private int callCount = 0;
         public long numSearchedNodes = 0;
-        public int SelectiveDepth { get; set; } = 0;
     }
 }

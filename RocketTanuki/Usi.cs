@@ -10,7 +10,7 @@ namespace RocketTanuki
 {
     public class Usi
     {
-        public static void OutputPv(BestMove bestMove, int alpha, int beta, int selectiveDepth)
+        public static void OutputPv(BestMove bestMove, int alpha, int beta)
         {
             var writer = new StringWriter();
             writer.Write("info");
@@ -18,10 +18,6 @@ namespace RocketTanuki
             // depth
             writer.Write(" depth ");
             writer.Write(bestMove.Depth);
-
-            // seldepth
-            writer.Write(" seldepth ");
-            writer.Write(selectiveDepth);
 
             // time
             writer.Write(" time ");
@@ -66,10 +62,7 @@ namespace RocketTanuki
             writer.Write(" pv");
             BestMove current = bestMove;
             // stopコマンド受信時にcurrent.Moveがnullの場合があるため
-            while (current != null
-                && current.Move != null
-                && current.Move != Move.Resign
-                && current.Move != Move.None)
+            while (current != null && current.Move != null && current.Move != Move.Resign)
             {
                 writer.Write(" ");
                 writer.Write(current.Move.ToUsiString());

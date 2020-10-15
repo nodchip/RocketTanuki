@@ -17,7 +17,7 @@ namespace RocketTanuki
 
         public bool IsValid()
         {
-            return !position.IsChecked(position.SideToMove.AsOpponent());
+            return !position.IsChecked(position.SideToMove.ToOpponent());
         }
 
         private Position position;

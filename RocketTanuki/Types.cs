@@ -359,7 +359,7 @@ namespace RocketTanuki
         /// </summary>
         /// <param name="color"></param>
         /// <returns></returns>
-        public static Color AsOpponent(this Color color)
+        public static Color ToOpponent(this Color color)
         {
             return color == Color.Black ? Color.White : Color.Black;
         }

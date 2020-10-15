@@ -38,9 +38,11 @@ namespace RocketTanuki
 
             TranspositionTable.Instance.NewSearch();
 
-            var searcher = new Searcher(0);
-            searchers.Add(searcher);
-            searchTasks.Add(Task.Run(() => { return searcher.Search(position); }));
+            {
+                var searcher = new Searcher(0);
+                searchers.Add(searcher);
+                searchTasks.Add(Task.Run(() => { return searcher.Search(position); }));
+            }
 
             // 全ての探索タスクが終了するまで待つ
             WaitAllSearchTasks();
@@ -61,7 +63,7 @@ namespace RocketTanuki
             }
 
             // info pvを出力する
-            Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue, searcher.SelectiveDepth);
+            Usi.OutputPv(bestMove, -InfiniteValue, InfiniteValue);
 
             // bestmoveを出力する
             var writer = new StringWriter();
@@ -75,11 +77,7 @@ namespace RocketTanuki
             {
                 writer.Write("resign");
             }
-            if (bestMove.Next != null
-                && bestMove.Next.Move != null
-                && bestMove.Next.Move != Move.Resign
-                && bestMove.Next.Move != Move.Win
-                && bestMove.Next.Move != Move.None)
+            if (bestMove.Next != null && bestMove.Next.Move != null && bestMove.Next.Move != Move.Resign && bestMove.Next.Move != Move.Win)
             {
                 writer.Write(" ponder ");
                 writer.Write(bestMove.Next.Move.ToUsiString());
