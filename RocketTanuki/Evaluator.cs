@@ -360,26 +360,21 @@ namespace RocketTanuki
             Array.Copy(featureTransformerBiases, position.State.Z1White, HalfDimentions);
 
             // 盤上の駒
-            var bitBoard = position.BitBoards[0] | position.BitBoards[1];
-            while (!bitBoard.IsZero)
+            for (int file = 0; file < Position.BoardSize; ++file)
             {
-                int square = bitBoard.LowestBitPosition();
-                int file = square / 9;
-                int rank = square % 9;
-
-                if (position.Board[file, rank] == Piece.NoPiece
-                    || position.Board[file, rank] == Piece.BlackKing
-                    || position.Board[file, rank] == Piece.WhiteKing)
+                for (int rank = 0; rank < Position.BoardSize; ++rank)
                 {
-                    bitBoard &= ~BitBoard.OneBits[square];
-                    continue;
+                    if (position.Board[file, rank] == Piece.NoPiece
+                        || position.Board[file, rank] == Piece.BlackKing
+                        || position.Board[file, rank] == Piece.WhiteKing)
+                    {
+                        continue;
+                    }
+
+                    Add(position,
+                        MakeBoardPieceId(position.Board[file, rank], file, rank),
+                        MakeBoardPieceId(position.Board[file, rank].AsOpponentPiece(), 8 - file, 8 - rank));
                 }
-
-                Add(position,
-                    MakeBoardPieceId(position.Board[file, rank], file, rank),
-                    MakeBoardPieceId(position.Board[file, rank].AsOpponentPiece(), 8 - file, 8 - rank));
-
-                bitBoard &= ~BitBoard.OneBits[square];
             }
 
             // 持ち駒

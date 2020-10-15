@@ -19,7 +19,6 @@ namespace RocketTanuki
         {
             Position.Initialize();
             Types.Initialize();
-            BitBoard.Initialize();
         }
 
         void Run()
