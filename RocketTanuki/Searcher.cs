@@ -137,8 +137,13 @@ namespace RocketTanuki
             Move bestMove = Move.Resign;
             bool searchPv = true;
             Move transpositionTableMove = found ? Move.FromUshort(position, transpositionTableEntry.Move) : null;
-            foreach (var move in MoveGenerator.Generate(position, transpositionTableMove))
+            foreach (var move in MoveGenerator.Generate(position, transpositionTableMove, false))
             {
+                // TODO(nodchip): 探索を終えた直後に判定する
+                if (!Searchers.Instance.thinking)
+                {
+                    break;
+                }
                 if (!Searchers.Instance.thinking)
                 {
                     break;
@@ -204,6 +209,80 @@ namespace RocketTanuki
                 Move = bestMove,
                 Next = bestChildBestMove,
                 Value = value,
+            };
+        }
+
+        /// <summary>
+        /// Quiescence Search - Chessprogramming wiki https://www.chessprogramming.org/Quiescence_Search
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="alpha"></param>
+        /// <param name="beta"></param>
+        /// <param name="depth"></param>
+        /// <param name="playFromRootNode"></param>
+        /// <returns></returns>
+        private BestMove quiescenceSearch(Position position, int alpha, int beta, int depth, int playFromRootNode)
+        {
+            int stand_pat = Evaluator.Instance.Evaluate(position);
+            if (stand_pat >= beta)
+            {
+                return new BestMove
+                {
+                    Value = beta,
+                };
+            }
+            if (alpha < stand_pat)
+                alpha = stand_pat;
+
+            BestMove bestChildBestMove = null;
+            Move bestMove = null;
+            // TODO(nodchip): 置換表を参照する
+            // TODO(nodchip): PVSに変更する
+            foreach (var move in MoveGenerator.Generate(position, null, true))
+            {
+                // TODO(nodchip): 探索を終えた直後に判定する
+                if (!Searchers.Instance.thinking)
+                {
+                    break;
+                }
+
+                BestMove childBestMove;
+                Interlocked.Increment(ref numSearchedNodes);
+                using (var mover = new Mover(position, move))
+                {
+                    if (!mover.IsValid())
+                    {
+                        // 王手を放置しているので、処理しない。
+                        continue;
+                    }
+
+                    // TODO(nodchip): PVSに変更する
+                    childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                }
+
+                if (-childBestMove.Value >= beta)
+                {
+                    return new BestMove
+                    {
+                        Value = beta, //  fail hard beta-cutoff
+                        Move = move,
+                        Next = childBestMove,
+                    };
+                }
+
+                if (-childBestMove.Value > alpha)
+                {
+                    alpha = -childBestMove.Value; // alpha acts like max in MiniMax
+                    bestMove = move;
+                    bestChildBestMove = childBestMove;
+                }
+            }
+
+            return new BestMove
+            {
+                Move = bestMove,
+                Next = bestChildBestMove,
+                Value = alpha,
             };
         }
 
