@@ -42,7 +42,7 @@ namespace RocketTanuki
                 BestMove bestMoveCandidate;
                 while (true)
                 {
-                    bestMoveCandidate = search(position, alpha, beta, depth, 0);
+                    bestMoveCandidate = Search(position, alpha, beta, depth, 0);
                     bestMoveCandidate.Depth = depth;
                     if ((bestMoveCandidate.Value <= alpha || beta <= bestMoveCandidate.Value)
                         && TimeManager.Instance.ElapsedMs() > 3000)
@@ -94,7 +94,7 @@ namespace RocketTanuki
         /// <param name="depth"></param>
         /// <param name="playFromRootNode">Root局面からの手数</param>
         /// <returns></returns>
-        private BestMove search(Position position, int alpha, int beta, int depth, int playFromRootNode)
+        private BestMove Search(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
             if (!Searchers.Instance.thinking)
             {
@@ -161,14 +161,14 @@ namespace RocketTanuki
 
                     if (searchPv)
                     {
-                        childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                        childBestMove = Search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                     }
                     else
                     {
-                        childBestMove = search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
+                        childBestMove = Search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
                         if (-childBestMove.Value > alpha)
                         {
-                            childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                            childBestMove = Search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                         }
                     }
                 }
@@ -221,7 +221,7 @@ namespace RocketTanuki
         /// <param name="depth"></param>
         /// <param name="playFromRootNode"></param>
         /// <returns></returns>
-        private BestMove quiescenceSearch(Position position, int alpha, int beta, int depth, int playFromRootNode)
+        private BestMove QuiescenceSearch(Position position, int alpha, int beta, int depth, int playFromRootNode)
         {
             int stand_pat = Evaluator.Instance.Evaluate(position);
             if (stand_pat >= beta)
@@ -258,14 +258,14 @@ namespace RocketTanuki
 
                     if (searchPv)
                     {
-                        childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                        childBestMove = Search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                     }
                     else
                     {
-                        childBestMove = search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
+                        childBestMove = Search(position, -alpha - 1, -alpha, depth - 1, playFromRootNode + 1);
                         if (-childBestMove.Value > alpha)
                         {
-                            childBestMove = search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
+                            childBestMove = Search(position, -beta, -alpha, depth - 1, playFromRootNode + 1);
                         }
                     }
                 }
