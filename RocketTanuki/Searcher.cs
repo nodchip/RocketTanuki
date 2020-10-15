@@ -230,7 +230,7 @@ namespace RocketTanuki
             SelectiveDepth = Max(SelectiveDepth, playFromRootNode);
 
             var transpositionTableEntry = TranspositionTable.Instance.Probe(position.Hash, out bool found);
-            if (found && depth <= transpositionTableEntry.Depth)
+            if (found && 0 <= transpositionTableEntry.Depth)
             {
                 return new BestMove
                 {
