@@ -198,6 +198,18 @@ namespace RocketTanuki
         /// <param name="sfen"></param>
         public void Set(string sfen)
         {
+            SideToMove = Color.Black;
+            Array.Clear(Board, 0, Board.Length);
+            Array.Clear(HandPieces, 0, HandPieces.Length);
+            Play = 1;
+            Hash = 0;
+            BlackKingFile = 0;
+            BlackKingRank = 0;
+            WhiteKingFile = 0;
+            WhiteKingRank = 0;
+            State = null;
+            LastMove = null;
+
             // 盤面
             int file = BoardSize - 1;
             int rank = 0;
