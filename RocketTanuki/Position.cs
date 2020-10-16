@@ -29,6 +29,16 @@ namespace RocketTanuki
         public PositionState State { get; set; }
         public Move LastMove { get; set; }
 
+        /// <summary>
+        /// 駒が置かれているマスのリスト。[先手・後手]
+        /// </summary>
+        public List<int>[] SquaresUnderPiece { get; set; } = new[] { new List<int>(), new List<int>() };
+
+        /// <summary>
+        /// マスからSquaresのインデックスへのリスト
+        /// </summary>
+        private int[,] SquareToSquaresUnderPieceIndex = new int[BoardSize, BoardSize];
+
         public static void Initialize()
         {
         }
@@ -157,6 +167,9 @@ namespace RocketTanuki
             Debug.Assert(Board[file, rank] == Piece.NoPiece);
             Hash += Zobrist.Instance.PieceSquare[(int)piece, file, rank];
             Board[file, rank] = piece;
+
+            SquareToSquaresUnderPieceIndex[file, rank] = SquaresUnderPiece[(int)piece.ToColor()].Count;
+            SquaresUnderPiece[(int)piece.ToColor()].Add(file * BoardSize + rank);
         }
 
         /// <summary>
@@ -167,8 +180,14 @@ namespace RocketTanuki
         private void RemovePiece(int file, int rank)
         {
             Debug.Assert(Board[file, rank] != Piece.NoPiece);
+            var piece = Board[file, rank];
             Hash -= Zobrist.Instance.PieceSquare[(int)Board[file, rank], file, rank];
             Board[file, rank] = Piece.NoPiece;
+
+            int squaresUnderPieceIndex = SquareToSquaresUnderPieceIndex[file, rank];
+            int squareLast = SquaresUnderPiece[(int)piece.ToColor()][SquaresUnderPiece[(int)piece.ToColor()].Count - 1];
+            SquaresUnderPiece[(int)piece.ToColor()][squaresUnderPieceIndex] = squareLast;
+            SquareToSquaresUnderPieceIndex[squareLast / 9, squareLast % 9] = squaresUnderPieceIndex;
         }
 
         /// <summary>
@@ -238,8 +257,8 @@ namespace RocketTanuki
                         piece = piece.AsPromoted();
                         promotion = false;
                     }
-                    Board[file, rank] = piece;
-                    Hash += Zobrist.Instance.PieceSquare[(int)piece, file, rank];
+
+                    PutPiece(file, rank, piece);
 
                     if (piece == Piece.BlackKing)
                     {
