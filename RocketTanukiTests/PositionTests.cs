@@ -7,6 +7,12 @@ namespace RocketTanukiTests
     [TestClass]
     public class PositionTests
     {
+        [TestInitialize]
+        public void Initialize()
+        {
+            Program.Initialize();
+        }
+
         [TestMethod]
         public void Position_Hash()
         {

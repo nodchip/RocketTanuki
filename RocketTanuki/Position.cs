@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using static RocketTanuki.Types;
@@ -45,34 +46,30 @@ namespace RocketTanuki
             // 相手の駒を取る
             if (move.PieceTo != Piece.NoPiece)
             {
+                RemovePiece(move.FileTo, move.RankTo);
+
                 Debug.Assert(move.PieceTo.ToColor() != SideToMove);
                 Debug.Assert(move.PieceTo.AsOpponentHandPiece().ToColor() == SideToMove);
-                ++HandPieces[(int)move.PieceTo.AsOpponentHandPiece()];
-                Hash += Zobrist.Instance.HandPiece[(int)move.PieceTo.AsOpponentHandPiece()];
+                PutHandPiece(move.PieceTo.AsOpponentHandPiece());
             }
-
-            Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
-            Board[move.FileTo, move.RankTo] = move.Promotion
-                ? Types.AsPromoted(move.PieceFrom)
-                : move.PieceFrom;
-            Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
-            Debug.Assert(Board[move.FileTo, move.RankTo].ToColor() == SideToMove);
 
             if (move.Drop)
             {
                 // 駒を打つ指し手
                 Debug.Assert(move.PieceFrom.ToColor() == SideToMove);
-                Debug.Assert(HandPieces[(int)move.PieceFrom] > 0);
-                --HandPieces[(int)move.PieceFrom];
-                Hash -= Zobrist.Instance.HandPiece[(int)move.PieceFrom];
+                RemoveHandPiece(move.PieceFrom);
             }
             else
             {
                 // 駒を移動する指し手
-                Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
-                Board[move.FileFrom, move.RankFrom] = Piece.NoPiece;
-                Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
+                RemovePiece(move.FileFrom, move.RankFrom);
             }
+
+            PutPiece(move.FileTo, move.RankTo,
+                move.Promotion
+                ? move.PieceFrom.AsPromoted()
+                : move.PieceFrom);
+            Debug.Assert(Board[move.FileTo, move.RankTo].ToColor() == SideToMove);
 
             SideToMove = SideToMove.ToOpponent();
             Hash ^= Zobrist.Instance.Side;
@@ -125,34 +122,74 @@ namespace RocketTanuki
                 WhiteKingRank = move.RankFrom;
             }
 
+            RemovePiece(move.FileTo, move.RankTo);
+
             if (move.Drop)
             {
                 // 駒を打つ指し手
                 Debug.Assert(move.PieceFrom.ToColor() == SideToMove);
-                Hash += Zobrist.Instance.HandPiece[(int)move.PieceFrom];
-                ++HandPieces[(int)move.PieceFrom];
+                PutHandPiece(move.PieceFrom);
             }
             else
             {
                 // 駒を移動する指し手
                 Debug.Assert(move.PieceFrom.ToColor() == SideToMove);
-                Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
-                Board[move.FileFrom, move.RankFrom] = move.PieceFrom;
-                Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileFrom, move.RankFrom], move.FileFrom, move.RankFrom];
+                PutPiece(move.FileFrom, move.RankFrom, move.PieceFrom);
             }
-
-            Hash -= Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
-            Board[move.FileTo, move.RankTo] = move.PieceTo;
-            Hash += Zobrist.Instance.PieceSquare[(int)Board[move.FileTo, move.RankTo], move.FileTo, move.RankTo];
 
             // 相手の駒を取る
             if (move.PieceTo != Piece.NoPiece)
             {
                 Debug.Assert(move.PieceTo.ToColor() != SideToMove);
-                Debug.Assert(HandPieces[(int)move.PieceTo.AsOpponentHandPiece()] > 0);
-                Hash -= Zobrist.Instance.HandPiece[(int)move.PieceTo.AsOpponentHandPiece()];
-                --HandPieces[(int)move.PieceTo.AsOpponentHandPiece()];
+                RemoveHandPiece(move.PieceTo.AsOpponentHandPiece());
+                PutPiece(move.FileTo, move.RankTo, move.PieceTo);
             }
+        }
+
+        /// <summary>
+        /// 盤面に駒を配置する
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="rank"></param>
+        /// <param name="piece"></param>
+        private void PutPiece(int file, int rank, Piece piece)
+        {
+            Debug.Assert(Board[file, rank] == Piece.NoPiece);
+            Hash += Zobrist.Instance.PieceSquare[(int)piece, file, rank];
+            Board[file, rank] = piece;
+        }
+
+        /// <summary>
+        /// 盤面から駒を取り除く
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="rank"></param>
+        private void RemovePiece(int file, int rank)
+        {
+            Debug.Assert(Board[file, rank] != Piece.NoPiece);
+            Hash -= Zobrist.Instance.PieceSquare[(int)Board[file, rank], file, rank];
+            Board[file, rank] = Piece.NoPiece;
+        }
+
+        /// <summary>
+        /// 持ち駒に駒を加える
+        /// </summary>
+        /// <param name="piece"></param>
+        private void PutHandPiece(Piece piece)
+        {
+            Hash += Zobrist.Instance.HandPiece[(int)piece];
+            ++HandPieces[(int)piece];
+        }
+
+        /// <summary>
+        /// 持ちがお魔から駒を取り除く
+        /// </summary>
+        /// <param name="piece"></param>
+        private void RemoveHandPiece(Piece piece)
+        {
+            Debug.Assert(HandPieces[(int)piece] > 0);
+            Hash -= Zobrist.Instance.HandPiece[(int)piece];
+            --HandPieces[(int)piece];
         }
 
         /// <summary>
@@ -189,7 +226,6 @@ namespace RocketTanuki
                     do
                     {
                         Board[file, rank] = Piece.NoPiece;
-                        Hash += Zobrist.Instance.PieceSquare[(int)Piece.NoPiece, file, rank];
                         --file;
                     } while (--numNoPieces > 0);
                 }
