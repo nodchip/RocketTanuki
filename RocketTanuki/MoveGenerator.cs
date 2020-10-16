@@ -19,14 +19,21 @@ namespace RocketTanuki
         /// <param name="position"></param>
         /// <param name="position">置換表に登録されている指し手</param>
         /// <returns></returns>
-        public static IEnumerable<Move> Generate(Position position, Move transpositionTableMove)
+        public static IEnumerable<Move> Generate(Position position, Move transpositionTableMove, bool onlyCapture, int fileCapture, int rankCapture)
         {
             if (transpositionTableMove != null
                 && transpositionTableMove != Move.Resign
                 && transpositionTableMove != Move.Win
+                && transpositionTableMove != Move.None
                 && position.IsValid(transpositionTableMove))
             {
-                yield return transpositionTableMove;
+                // 置換表に登録されている指し手を優先的に返す
+
+                if (!onlyCapture || transpositionTableMove.PieceTo != Piece.NoPiece)
+                {
+                    // onlyCaptureが指定されている場合は、駒を取る指し手のみ返す。
+                    yield return transpositionTableMove;
+                }
             }
 
             var sideToMove = position.SideToMove;
@@ -77,18 +84,22 @@ namespace RocketTanuki
                             if (CanPutWithoutPromotion(pieceFrom, rankTo))
                             {
                                 // 成らずに移動する
-                                yield return new Move
+                                if (!onlyCapture || (pieceTo != Piece.NoPiece && fileTo == fileCapture && rankTo == rankCapture))
                                 {
-                                    FileFrom = fileFrom,
-                                    RankFrom = rankFrom,
-                                    PieceFrom = pieceFrom,
-                                    FileTo = fileTo,
-                                    RankTo = rankTo,
-                                    PieceTo = pieceTo,
-                                    Drop = false,
-                                    Promotion = false,
-                                    SideToMove = sideToMove,
-                                };
+                                    // onlyCaptureが指定されている場合は、駒を取る指し手のみ返す。
+                                    yield return new Move
+                                    {
+                                        FileFrom = fileFrom,
+                                        RankFrom = rankFrom,
+                                        PieceFrom = pieceFrom,
+                                        FileTo = fileTo,
+                                        RankTo = rankTo,
+                                        PieceTo = pieceTo,
+                                        Drop = false,
+                                        Promotion = false,
+                                        SideToMove = sideToMove,
+                                    };
+                                }
                             }
 
                             if (pieceFrom.CanPromote() &&
@@ -98,18 +109,23 @@ namespace RocketTanuki
                                 || (sideToMove == Color.White && rankFrom >= 6)))
                             {
                                 // 成って移動する
-                                yield return new Move
+
+                                if (!onlyCapture || (pieceTo != Piece.NoPiece && fileTo == fileCapture && rankTo == rankCapture))
                                 {
-                                    FileFrom = fileFrom,
-                                    RankFrom = rankFrom,
-                                    PieceFrom = pieceFrom,
-                                    FileTo = fileTo,
-                                    RankTo = rankTo,
-                                    PieceTo = pieceTo,
-                                    Drop = false,
-                                    Promotion = true,
-                                    SideToMove = sideToMove,
-                                };
+                                    // onlyCaptureが指定されている場合は、駒を取る指し手のみ返す。
+                                    yield return new Move
+                                    {
+                                        FileFrom = fileFrom,
+                                        RankFrom = rankFrom,
+                                        PieceFrom = pieceFrom,
+                                        FileTo = fileTo,
+                                        RankTo = rankTo,
+                                        PieceTo = pieceTo,
+                                        Drop = false,
+                                        Promotion = true,
+                                        SideToMove = sideToMove,
+                                    };
+                                }
                             }
 
                             if (pieceTo != Piece.NoPiece)
@@ -120,6 +136,12 @@ namespace RocketTanuki
                         }
                     }
                 }
+            }
+
+            if (onlyCapture)
+            {
+                // 駒を打つ指し手は生成しない
+                yield break;
             }
 
             // 駒を打つ指し手

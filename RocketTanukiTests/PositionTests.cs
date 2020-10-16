@@ -22,7 +22,7 @@ namespace RocketTanukiTests
                 position.Set(sfen);
 
                 long hash = position.Hash;
-                foreach (var move in MoveGenerator.Generate(position, null))
+                foreach (var move in MoveGenerator.Generate(position, null, false, 0, 0))
                 {
                     using (var mover = new Mover(position, move)) { }
                     Assert.AreEqual(hash, position.Hash);
@@ -51,6 +51,17 @@ namespace RocketTanukiTests
                 position.Set(expected);
                 var actual = position.ToSfenString();
                 Assert.AreEqual(expected, actual);
+            }
+        }
+
+        [TestMethod]
+        public void GenerateMove_OnlyCapture()
+        {
+            var position = new Position();
+            position.Set(Position.MatsuriSfen);
+            foreach (var move in MoveGenerator.Generate(position, null, true, 0, 0))
+            {
+                Assert.AreNotEqual(Piece.NoPiece, move.PieceTo);
             }
         }
     }

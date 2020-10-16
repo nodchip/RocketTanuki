@@ -19,7 +19,7 @@ namespace RocketTanuki
     {
         public long Hash { get; set; }
         public ushort Move { get; set; }
-        public byte Depth { get; set; }
+        public sbyte Depth { get; set; }
         public byte Bound { get; set; }
         public ushort Generation { get; set; }
         public short Value { get; set; }
@@ -57,7 +57,7 @@ namespace RocketTanuki
 
             Entries[index].Hash = hash;
             Entries[index].Move = move.ToUshort();
-            Entries[index].Depth = (byte)depth;
+            Entries[index].Depth = (sbyte)depth;
             Entries[index].Bound = (byte)bound;
             Entries[index].Generation = (ushort)generation;
             Entries[index].Value = (short)value;
