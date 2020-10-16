@@ -34,89 +34,89 @@ namespace RocketTanuki
             var handPieces = position.HandPieces;
 
             // 駒を移動する指し手
-            for (int fileFrom = 0; fileFrom < Position.BoardSize; ++fileFrom)
+            for (int squareIndex = 0; squareIndex < position.NumSquaresUnderPiece[(int)position.SideToMove]; ++squareIndex)
             {
-                for (int rankFrom = 0; rankFrom < Position.BoardSize; ++rankFrom)
+                int square = position.SquaresUnderPiece[(int)position.SideToMove, squareIndex];
+                int fileFrom = square / 9;
+                int rankFrom = square % 9;
+                var pieceFrom = board[fileFrom, rankFrom];
+                if (pieceFrom == Piece.NoPiece)
                 {
-                    var pieceFrom = board[fileFrom, rankFrom];
-                    if (pieceFrom == Piece.NoPiece)
-                    {
-                        // 駒が置かれていないので何もしない
-                        continue;
-                    }
+                    // 駒が置かれていないので何もしない
+                    continue;
+                }
 
-                    if (pieceFrom.ToColor() != sideToMove)
-                    {
-                        // 相手の駒なので何もしない
-                        continue;
-                    }
+                if (pieceFrom.ToColor() != sideToMove)
+                {
+                    // 相手の駒なので何もしない
+                    continue;
+                }
 
-                    foreach (var moveDirection in MoveDirections[(int)pieceFrom])
+                foreach (var moveDirection in MoveDirections[(int)pieceFrom])
+                {
+                    int maxDistance = moveDirection.Long ? 8 : 1;
+                    int fileTo = fileFrom;
+                    int rankTo = rankFrom;
+                    for (int distance = 0; distance < maxDistance; ++distance)
                     {
-                        int maxDistance = moveDirection.Long ? 8 : 1;
-                        int fileTo = fileFrom;
-                        int rankTo = rankFrom;
-                        for (int distance = 0; distance < maxDistance; ++distance)
+                        fileTo += moveDirection.Direction.DeltaFile;
+                        rankTo += moveDirection.Direction.DeltaRank;
+
+                        if (fileTo < 0 || Position.BoardSize <= fileTo || rankTo < 0 || Position.BoardSize <= rankTo)
                         {
-                            fileTo += moveDirection.Direction.DeltaFile;
-                            rankTo += moveDirection.Direction.DeltaRank;
+                            // 盤外
+                            continue;
+                        }
 
-                            if (fileTo < 0 || Position.BoardSize <= fileTo || rankTo < 0 || Position.BoardSize <= rankTo)
-                            {
-                                // 盤外
-                                continue;
-                            }
+                        var pieceTo = board[fileTo, rankTo];
+                        if (pieceTo != Piece.NoPiece && pieceTo.ToColor() == sideToMove)
+                        {
+                            // 味方の駒がいる
+                            break;
+                        }
 
-                            var pieceTo = board[fileTo, rankTo];
-                            if (pieceTo != Piece.NoPiece && pieceTo.ToColor() == sideToMove)
+                        if (CanPutWithoutPromotion(pieceFrom, rankTo))
+                        {
+                            // 成らずに移動する
+                            yield return new Move
                             {
-                                // 味方の駒がいる
-                                break;
-                            }
+                                FileFrom = fileFrom,
+                                RankFrom = rankFrom,
+                                PieceFrom = pieceFrom,
+                                FileTo = fileTo,
+                                RankTo = rankTo,
+                                PieceTo = pieceTo,
+                                Drop = false,
+                                Promotion = false,
+                                SideToMove = sideToMove,
+                            };
+                        }
 
-                            if (CanPutWithoutPromotion(pieceFrom, rankTo))
+                        if (pieceFrom.CanPromote() &&
+                            ((sideToMove == Color.Black && rankTo <= 2)
+                            || (sideToMove == Color.White && rankTo >= 6)
+                            || (sideToMove == Color.Black && rankFrom <= 2)
+                            || (sideToMove == Color.White && rankFrom >= 6)))
+                        {
+                            // 成って移動する
+                            yield return new Move
                             {
-                                // 成らずに移動する
-                                yield return new Move
-                                {
-                                    FileFrom = fileFrom,
-                                    RankFrom = rankFrom,
-                                    PieceFrom = pieceFrom,
-                                    FileTo = fileTo,
-                                    RankTo = rankTo,
-                                    PieceTo = pieceTo,
-                                    Drop = false,
-                                    Promotion = false,
-                                    SideToMove = sideToMove,
-                                };
-                            }
+                                FileFrom = fileFrom,
+                                RankFrom = rankFrom,
+                                PieceFrom = pieceFrom,
+                                FileTo = fileTo,
+                                RankTo = rankTo,
+                                PieceTo = pieceTo,
+                                Drop = false,
+                                Promotion = true,
+                                SideToMove = sideToMove,
+                            };
+                        }
 
-                            if (pieceFrom.CanPromote() &&
-                                ((sideToMove == Color.Black && rankTo <= 2)
-                                || (sideToMove == Color.White && rankTo >= 6)
-                                || (sideToMove == Color.Black && rankFrom <= 2)
-                                || (sideToMove == Color.White && rankFrom >= 6)))
-                            {
-                                // 成って移動する
-                                yield return new Move
-                                {
-                                    FileFrom = fileFrom,
-                                    RankFrom = rankFrom,
-                                    PieceFrom = pieceFrom,
-                                    FileTo = fileTo,
-                                    RankTo = rankTo,
-                                    PieceTo = pieceTo,
-                                    Drop = false,
-                                    Promotion = true,
-                                    SideToMove = sideToMove,
-                                };
-                            }
-
-                            if (pieceTo != Piece.NoPiece)
-                            {
-                                // 相手の駒なので、ここで利きが止まる
-                                break;
-                            }
+                        if (pieceTo != Piece.NoPiece)
+                        {
+                            // 相手の駒なので、ここで利きが止まる
+                            break;
                         }
                     }
                 }

@@ -32,7 +32,8 @@ namespace RocketTanuki
         /// <summary>
         /// 駒が置かれているマスのリスト。[先手・後手]
         /// </summary>
-        public List<int>[] SquaresUnderPiece { get; set; } = new[] { new List<int>(), new List<int>() };
+        public int[,] SquaresUnderPiece { get; } = new int[2, 38];
+        public int[] NumSquaresUnderPiece { get; } = new int[2];
 
         /// <summary>
         /// マスからSquaresのインデックスへのリスト
@@ -168,8 +169,8 @@ namespace RocketTanuki
             Hash += Zobrist.Instance.PieceSquare[(int)piece, file, rank];
             Board[file, rank] = piece;
 
-            SquareToSquaresUnderPieceIndex[file, rank] = SquaresUnderPiece[(int)piece.ToColor()].Count;
-            SquaresUnderPiece[(int)piece.ToColor()].Add(file * BoardSize + rank);
+            SquareToSquaresUnderPieceIndex[file, rank] = NumSquaresUnderPiece[(int)piece.ToColor()];
+            SquaresUnderPiece[(int)piece.ToColor(), NumSquaresUnderPiece[(int)piece.ToColor()]++] = file * BoardSize + rank;
         }
 
         /// <summary>
@@ -185,8 +186,8 @@ namespace RocketTanuki
             Board[file, rank] = Piece.NoPiece;
 
             int squaresUnderPieceIndex = SquareToSquaresUnderPieceIndex[file, rank];
-            int squareLast = SquaresUnderPiece[(int)piece.ToColor()][SquaresUnderPiece[(int)piece.ToColor()].Count - 1];
-            SquaresUnderPiece[(int)piece.ToColor()][squaresUnderPieceIndex] = squareLast;
+            int squareLast = SquaresUnderPiece[(int)piece.ToColor(), --NumSquaresUnderPiece[(int)piece.ToColor()]];
+            SquaresUnderPiece[(int)piece.ToColor(), squaresUnderPieceIndex] = squareLast;
             SquareToSquaresUnderPieceIndex[squareLast / 9, squareLast % 9] = squaresUnderPieceIndex;
         }
 
@@ -217,6 +218,9 @@ namespace RocketTanuki
         /// <param name="sfen"></param>
         public void Set(string sfen)
         {
+            NumSquaresUnderPiece[0] = 0;
+            NumSquaresUnderPiece[1] = 0;
+
             // 盤面
             int file = BoardSize - 1;
             int rank = 0;
@@ -446,53 +450,54 @@ namespace RocketTanuki
             var king = color == Color.Black ? Piece.BlackKing : Piece.WhiteKing;
 
             // 駒を移動する指し手
-            for (int fileFrom = 0; fileFrom < Position.BoardSize; ++fileFrom)
+            for (int squareIndex = 0; squareIndex < NumSquaresUnderPiece[(int)SideToMove]; ++squareIndex)
             {
-                for (int rankFrom = 0; rankFrom < Position.BoardSize; ++rankFrom)
+                int square = SquaresUnderPiece[(int)SideToMove, squareIndex];
+                int fileFrom = square / 9;
+                int rankFrom = square % 9;
+                var pieceFrom = Board[fileFrom, rankFrom];
+                if (pieceFrom == Piece.NoPiece)
                 {
-                    var pieceFrom = Board[fileFrom, rankFrom];
-                    if (pieceFrom == Piece.NoPiece)
-                    {
-                        // 駒が置かれていないので何もしない
-                        continue;
-                    }
+                    // 駒が置かれていないので何もしない
+                    continue;
+                }
 
-                    if (pieceFrom.ToColor() == color)
-                    {
-                        // 味方の駒なので何もしない
-                        continue;
-                    }
+                if (pieceFrom.ToColor() == color)
+                {
+                    // 味方の駒なので何もしない
+                    continue;
+                }
 
-                    foreach (var moveDirection in MoveDirections[(int)pieceFrom])
+                foreach (var moveDirection in MoveDirections[(int)pieceFrom])
+                {
+                    int maxDistance = moveDirection.Long ? 8 : 1;
+                    int fileTo = fileFrom;
+                    int rankTo = rankFrom;
+                    for (int distance = 0; distance < maxDistance; ++distance)
                     {
-                        int maxDistance = moveDirection.Long ? 8 : 1;
-                        int fileTo = fileFrom;
-                        int rankTo = rankFrom;
-                        for (int distance = 0; distance < maxDistance; ++distance)
+                        fileTo += moveDirection.Direction.DeltaFile;
+                        rankTo += moveDirection.Direction.DeltaRank;
+
+                        if (fileTo < 0 || Position.BoardSize <= fileTo || rankTo < 0 || Position.BoardSize <= rankTo)
                         {
-                            fileTo += moveDirection.Direction.DeltaFile;
-                            rankTo += moveDirection.Direction.DeltaRank;
+                            // 盤外
+                            continue;
+                        }
 
-                            if (fileTo < 0 || Position.BoardSize <= fileTo || rankTo < 0 || Position.BoardSize <= rankTo)
-                            {
-                                // 盤外
-                                continue;
-                            }
+                        var pieceTo = Board[fileTo, rankTo];
+                        if (pieceTo == king)
+                        {
+                            // 味方の玉に利きを持っている
+                            return true;
+                        }
 
-                            var pieceTo = Board[fileTo, rankTo];
-                            if (pieceTo == king)
-                            {
-                                // 味方の玉に利きを持っている
-                                return true;
-                            }
-
-                            if (pieceTo != Piece.NoPiece)
-                            {
-                                // 味方の玉以外の駒がある
-                                break;
-                            }
+                        if (pieceTo != Piece.NoPiece)
+                        {
+                            // 味方の玉以外の駒がある
+                            break;
                         }
                     }
+
                 }
             }
 
