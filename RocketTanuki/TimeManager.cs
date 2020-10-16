@@ -109,12 +109,14 @@ namespace RocketTanuki
         }
 
         private volatile bool ponder;
+        public bool Ponder { get { return ponder; } set { ponder = value; } }
         private int btime;
         private int wtime;
         private int byoyomi;
         private int binc;
         private int winc;
         private bool infinite;
+        public bool Infinite { get { return infinite; } set { infinite = value; } }
         private Color sideToMove;
         private DateTime goTime;
         private DateTime timeConsumptionStartTime;

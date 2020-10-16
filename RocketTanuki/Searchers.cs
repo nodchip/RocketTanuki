@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,6 +65,11 @@ namespace RocketTanuki
                         bestMove = bestMoveCandidate;
                     }
                 }
+            }
+
+            while (thinking && (TimeManager.Instance.Ponder || TimeManager.Instance.Infinite))
+            {
+                Thread.Sleep(1);
             }
 
             // info pvを出力する
