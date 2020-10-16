@@ -100,12 +100,15 @@ namespace RocketTanuki
                                     Promotion = true,
                                     SideToMove = sideToMove,
                                 };
-                                if (move.PieceTo == Piece.NoPiece)
+
+                                if (move.PieceTo != Piece.NoPiece)
                                 {
+                                    // 駒を取る指し手の場合はすぐに返す
                                     yield return move;
                                 }
                                 else
                                 {
+                                    // 駒を取らない指し手の場合は後で返す
                                     nonCapturePromotionMoves.Add(move);
                                 }
                             }
@@ -126,12 +129,15 @@ namespace RocketTanuki
                                     Promotion = false,
                                     SideToMove = sideToMove,
                                 };
+
                                 if (move.PieceTo != Piece.NoPiece)
                                 {
+                                    // 駒を取る指し手の場合はすぐに返す
                                     yield return move;
                                 }
                                 else
                                 {
+                                    // 駒を取らない指し手の場合は後で返す
                                     nonCaptureNonPromotionMoves.Add(move);
                                 }
                             }
