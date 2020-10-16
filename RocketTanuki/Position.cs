@@ -29,17 +29,6 @@ namespace RocketTanuki
         public PositionState State { get; set; }
         public Move LastMove { get; set; }
 
-        /// <summary>
-        /// 駒が置かれているマスのリスト。[先手・後手]
-        /// </summary>
-        public int[,] SquaresUnderPiece { get; } = new int[2, 38];
-        public int[] NumSquaresUnderPiece { get; } = new int[2];
-
-        /// <summary>
-        /// マスからSquaresのインデックスへのリスト
-        /// </summary>
-        private int[,] SquareToSquaresUnderPieceIndex = new int[BoardSize, BoardSize];
-
         public static void Initialize()
         {
         }
@@ -168,9 +157,6 @@ namespace RocketTanuki
             Debug.Assert(Board[file, rank] == Piece.NoPiece);
             Hash += Zobrist.Instance.PieceSquare[(int)piece, file, rank];
             Board[file, rank] = piece;
-
-            SquareToSquaresUnderPieceIndex[file, rank] = NumSquaresUnderPiece[(int)piece.ToColor()];
-            SquaresUnderPiece[(int)piece.ToColor(), NumSquaresUnderPiece[(int)piece.ToColor()]++] = file * BoardSize + rank;
         }
 
         /// <summary>
@@ -181,14 +167,8 @@ namespace RocketTanuki
         private void RemovePiece(int file, int rank)
         {
             Debug.Assert(Board[file, rank] != Piece.NoPiece);
-            var piece = Board[file, rank];
             Hash -= Zobrist.Instance.PieceSquare[(int)Board[file, rank], file, rank];
             Board[file, rank] = Piece.NoPiece;
-
-            int squaresUnderPieceIndex = SquareToSquaresUnderPieceIndex[file, rank];
-            int squareLast = SquaresUnderPiece[(int)piece.ToColor(), --NumSquaresUnderPiece[(int)piece.ToColor()]];
-            SquaresUnderPiece[(int)piece.ToColor(), squaresUnderPieceIndex] = squareLast;
-            SquareToSquaresUnderPieceIndex[squareLast / 9, squareLast % 9] = squaresUnderPieceIndex;
         }
 
         /// <summary>
@@ -218,21 +198,6 @@ namespace RocketTanuki
         /// <param name="sfen"></param>
         public void Set(string sfen)
         {
-            SideToMove = Color.Black;
-            Array.Clear(Board, 0, Board.Length);
-            Array.Clear(HandPieces, 0, HandPieces.Length);
-            Play = 1;
-            Hash = 0;
-            BlackKingFile = 0;
-            BlackKingRank = 0;
-            WhiteKingFile = 0;
-            WhiteKingRank = 0;
-            State = null;
-            LastMove = null;
-            Array.Clear(SquaresUnderPiece, 0, SquaresUnderPiece.Length);
-            Array.Clear(NumSquaresUnderPiece, 0, NumSquaresUnderPiece.Length);
-            Array.Clear(SquareToSquaresUnderPieceIndex, 0, SquareToSquaresUnderPieceIndex.Length);
-
             // 盤面
             int file = BoardSize - 1;
             int rank = 0;
@@ -273,8 +238,8 @@ namespace RocketTanuki
                         piece = piece.AsPromoted();
                         promotion = false;
                     }
-
-                    PutPiece(file, rank, piece);
+                    Board[file, rank] = piece;
+                    Hash += Zobrist.Instance.PieceSquare[(int)piece, file, rank];
 
                     if (piece == Piece.BlackKing)
                     {
@@ -462,54 +427,53 @@ namespace RocketTanuki
             var king = color == Color.Black ? Piece.BlackKing : Piece.WhiteKing;
 
             // 駒を移動する指し手
-            for (int squareIndex = 0; squareIndex < NumSquaresUnderPiece[(int)SideToMove]; ++squareIndex)
+            for (int fileFrom = 0; fileFrom < Position.BoardSize; ++fileFrom)
             {
-                int square = SquaresUnderPiece[(int)SideToMove, squareIndex];
-                int fileFrom = square / 9;
-                int rankFrom = square % 9;
-                var pieceFrom = Board[fileFrom, rankFrom];
-                if (pieceFrom == Piece.NoPiece)
+                for (int rankFrom = 0; rankFrom < Position.BoardSize; ++rankFrom)
                 {
-                    // 駒が置かれていないので何もしない
-                    continue;
-                }
-
-                if (pieceFrom.ToColor() == color)
-                {
-                    // 味方の駒なので何もしない
-                    continue;
-                }
-
-                foreach (var moveDirection in MoveDirections[(int)pieceFrom])
-                {
-                    int maxDistance = moveDirection.Long ? 8 : 1;
-                    int fileTo = fileFrom;
-                    int rankTo = rankFrom;
-                    for (int distance = 0; distance < maxDistance; ++distance)
+                    var pieceFrom = Board[fileFrom, rankFrom];
+                    if (pieceFrom == Piece.NoPiece)
                     {
-                        fileTo += moveDirection.Direction.DeltaFile;
-                        rankTo += moveDirection.Direction.DeltaRank;
-
-                        if (fileTo < 0 || Position.BoardSize <= fileTo || rankTo < 0 || Position.BoardSize <= rankTo)
-                        {
-                            // 盤外
-                            continue;
-                        }
-
-                        var pieceTo = Board[fileTo, rankTo];
-                        if (pieceTo == king)
-                        {
-                            // 味方の玉に利きを持っている
-                            return true;
-                        }
-
-                        if (pieceTo != Piece.NoPiece)
-                        {
-                            // 味方の玉以外の駒がある
-                            break;
-                        }
+                        // 駒が置かれていないので何もしない
+                        continue;
                     }
 
+                    if (pieceFrom.ToColor() == color)
+                    {
+                        // 味方の駒なので何もしない
+                        continue;
+                    }
+
+                    foreach (var moveDirection in MoveDirections[(int)pieceFrom])
+                    {
+                        int maxDistance = moveDirection.Long ? 8 : 1;
+                        int fileTo = fileFrom;
+                        int rankTo = rankFrom;
+                        for (int distance = 0; distance < maxDistance; ++distance)
+                        {
+                            fileTo += moveDirection.Direction.DeltaFile;
+                            rankTo += moveDirection.Direction.DeltaRank;
+
+                            if (fileTo < 0 || Position.BoardSize <= fileTo || rankTo < 0 || Position.BoardSize <= rankTo)
+                            {
+                                // 盤外
+                                continue;
+                            }
+
+                            var pieceTo = Board[fileTo, rankTo];
+                            if (pieceTo == king)
+                            {
+                                // 味方の玉に利きを持っている
+                                return true;
+                            }
+
+                            if (pieceTo != Piece.NoPiece)
+                            {
+                                // 味方の玉以外の駒がある
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
