@@ -13,7 +13,7 @@ namespace RocketTanuki
     {
         public const string USI_Ponder = "USI_Ponder";
         public const string USI_Hash = "USI_Hash";
-        public const string EvalFile = "EvalFile";
+        public const string EvalDir = "EvalDir";
         public const string BookFile = "BookFile";
         public const string IgnoreBookPlay = "IgnoreBookPlay";
 
@@ -50,7 +50,7 @@ namespace RocketTanuki
                         Console.WriteLine("id author nodchip");
                         Console.WriteLine($"option name {USI_Ponder} type check default true");
                         Console.WriteLine($"option name {USI_Hash} type spin default 256");
-                        Console.WriteLine($"option name {EvalFile} type string default eval");
+                        Console.WriteLine($"option name {EvalDir} type string default eval");
                         Console.WriteLine($"option name {BookFile} type string default user_book1.db");
                         Console.WriteLine($"option name {IgnoreBookPlay} type check default true");
                         Console.WriteLine("usiok");
