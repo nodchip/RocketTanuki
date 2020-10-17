@@ -142,7 +142,7 @@ namespace RocketTanuki
         public void Load(Dictionary<string, string> options)
         {
             Debug.Assert(options.ContainsKey(Program.EvalFile));
-            var evalFilePath = options[Program.EvalFile];
+            var evalFilePath = Path.Combine(options[Program.EvalFile], "nn.bin");
 
             Console.WriteLine("info string Loading an eval file...");
             Console.WriteLine($"info string EvalFile={evalFilePath}");

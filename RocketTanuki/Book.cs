@@ -25,7 +25,7 @@ namespace RocketTanuki
 
         public void Load(Dictionary<string, string> options)
         {
-            var bookFilePath = options[Program.BookFile];
+            var bookFilePath = Path.Combine("book", options[Program.BookFile]);
             ignoreBookPlay = options[Program.IgnoreBookPlay] == "true";
 
             Console.WriteLine("info string Loading a book...");

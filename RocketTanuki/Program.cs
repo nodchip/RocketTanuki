@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,6 +26,7 @@ namespace RocketTanuki
         void Run()
         {
             //Debugger.Launch();
+            Environment.CurrentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
             Initialize();
 
@@ -45,8 +48,8 @@ namespace RocketTanuki
                     case "usi":
                         Console.WriteLine("id name Rocket Tanuki");
                         Console.WriteLine("id author nodchip");
-                        Console.WriteLine($"option name {EvalFile} type filename default eval/nn.bin");
-                        Console.WriteLine($"option name {BookFile} type filename default book/user_book1.db");
+                        Console.WriteLine($"option name {EvalFile} type string default eval");
+                        Console.WriteLine($"option name {BookFile} type string default user_book1.db");
                         Console.WriteLine($"option name {IgnoreBookPlay} type check default true");
                         Console.WriteLine("usiok");
                         Console.Out.Flush();
