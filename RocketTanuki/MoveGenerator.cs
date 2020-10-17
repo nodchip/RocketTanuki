@@ -14,12 +14,12 @@ namespace RocketTanuki
     public static class MoveGenerator
     {
         /// <summary>
-        /// 指し手を生成する。通常の探索から使用することを想定している。
+        /// 指し手を生成する
         /// </summary>
         /// <param name="position"></param>
         /// <param name="position">置換表に登録されている指し手</param>
         /// <returns></returns>
-        public static IEnumerable<Move> Generate(Position position, Move transpositionTableMove)
+        public static IEnumerable<Move> Generate(Position position, Move transpositionTableMove, bool onlyCapture, int fileCapture, int rankCapture)
         {
             if (transpositionTableMove != null
                 && transpositionTableMove != Move.Resign
@@ -29,15 +29,16 @@ namespace RocketTanuki
             {
                 // 置換表に登録されている指し手を優先的に返す
 
-                // onlyCaptureが指定されている場合は、駒を取る指し手のみ返す。
-                yield return transpositionTableMove;
+                if (!onlyCapture || transpositionTableMove.PieceTo != Piece.NoPiece)
+                {
+                    // onlyCaptureが指定されている場合は、駒を取る指し手のみ返す。
+                    yield return transpositionTableMove;
+                }
             }
 
             var sideToMove = position.SideToMove;
             var board = position.Board;
             var handPieces = position.HandPieces;
-            var nonCapturePromotionMoves = new List<Move>();
-            var nonCaptureNonPromotionMoves = new List<Move>();
 
             // 駒を移動する指し手
             for (int fileFrom = 0; fileFrom < Position.BoardSize; ++fileFrom)
@@ -80,6 +81,27 @@ namespace RocketTanuki
                                 break;
                             }
 
+                            if (CanPutWithoutPromotion(pieceFrom, rankTo))
+                            {
+                                // 成らずに移動する
+                                if (!onlyCapture || (pieceTo != Piece.NoPiece && fileTo == fileCapture && rankTo == rankCapture))
+                                {
+                                    // onlyCaptureが指定されている場合は、駒を取る指し手のみ返す。
+                                    yield return new Move
+                                    {
+                                        FileFrom = fileFrom,
+                                        RankFrom = rankFrom,
+                                        PieceFrom = pieceFrom,
+                                        FileTo = fileTo,
+                                        RankTo = rankTo,
+                                        PieceTo = pieceTo,
+                                        Drop = false,
+                                        Promotion = false,
+                                        SideToMove = sideToMove,
+                                    };
+                                }
+                            }
+
                             if (pieceFrom.CanPromote() &&
                                 ((sideToMove == Color.Black && rankTo <= 2)
                                 || (sideToMove == Color.White && rankTo >= 6)
@@ -88,57 +110,21 @@ namespace RocketTanuki
                             {
                                 // 成って移動する
 
-                                var move = new Move
+                                if (!onlyCapture || (pieceTo != Piece.NoPiece && fileTo == fileCapture && rankTo == rankCapture))
                                 {
-                                    FileFrom = fileFrom,
-                                    RankFrom = rankFrom,
-                                    PieceFrom = pieceFrom,
-                                    FileTo = fileTo,
-                                    RankTo = rankTo,
-                                    PieceTo = pieceTo,
-                                    Drop = false,
-                                    Promotion = true,
-                                    SideToMove = sideToMove,
-                                };
-
-                                if (move.PieceTo != Piece.NoPiece)
-                                {
-                                    // 駒を取る指し手の場合はすぐに返す
-                                    yield return move;
-                                }
-                                else
-                                {
-                                    // 駒を取らない指し手の場合は後で返す
-                                    nonCapturePromotionMoves.Add(move);
-                                }
-                            }
-
-                            if (CanPutWithoutPromotion(pieceFrom, rankTo))
-                            {
-                                // 成らずに移動する
-
-                                var move = new Move
-                                {
-                                    FileFrom = fileFrom,
-                                    RankFrom = rankFrom,
-                                    PieceFrom = pieceFrom,
-                                    FileTo = fileTo,
-                                    RankTo = rankTo,
-                                    PieceTo = pieceTo,
-                                    Drop = false,
-                                    Promotion = false,
-                                    SideToMove = sideToMove,
-                                };
-
-                                if (move.PieceTo != Piece.NoPiece)
-                                {
-                                    // 駒を取る指し手の場合はすぐに返す
-                                    yield return move;
-                                }
-                                else
-                                {
-                                    // 駒を取らない指し手の場合は後で返す
-                                    nonCaptureNonPromotionMoves.Add(move);
+                                    // onlyCaptureが指定されている場合は、駒を取る指し手のみ返す。
+                                    yield return new Move
+                                    {
+                                        FileFrom = fileFrom,
+                                        RankFrom = rankFrom,
+                                        PieceFrom = pieceFrom,
+                                        FileTo = fileTo,
+                                        RankTo = rankTo,
+                                        PieceTo = pieceTo,
+                                        Drop = false,
+                                        Promotion = true,
+                                        SideToMove = sideToMove,
+                                    };
                                 }
                             }
 
@@ -152,16 +138,10 @@ namespace RocketTanuki
                 }
             }
 
-            // 駒を取らない、成る指し手
-            foreach (var move in nonCapturePromotionMoves)
+            if (onlyCapture)
             {
-                yield return move;
-            }
-
-            // 駒を取らない、成らない指し手
-            foreach (var move in nonCaptureNonPromotionMoves)
-            {
-                yield return move;
+                // 駒を打つ指し手は生成しない
+                yield break;
             }
 
             // 駒を打つ指し手
@@ -209,137 +189,6 @@ namespace RocketTanuki
                             Promotion = false,
                             SideToMove = sideToMove,
                         };
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// 指し手を生成する。特定のマスでの駒の取り合いの指し手のみ生成する。
-        /// </summary>
-        /// <param name="position"></param>
-        /// <param name="transpositionTableMove"></param>
-        /// <param name="onlyCapture"></param>
-        /// <param name="fileCapture"></param>
-        /// <param name="rankCapture"></param>
-        /// <returns></returns>
-        public static IEnumerable<Move> Generate(Position position, Move transpositionTableMove, int fileCapture, int rankCapture)
-        {
-            if (transpositionTableMove != null
-                && transpositionTableMove != Move.Resign
-                && transpositionTableMove != Move.Win
-                && transpositionTableMove != Move.None
-                && position.IsValid(transpositionTableMove))
-            {
-                // 置換表に登録されている指し手を優先的に返す
-
-                if (transpositionTableMove.PieceTo != Piece.NoPiece
-                    && transpositionTableMove.FileTo == fileCapture
-                    && transpositionTableMove.RankTo == rankCapture)
-                {
-                    // onlyCaptureが指定されている場合は、駒を取る指し手のみ返す。
-                    yield return transpositionTableMove;
-                }
-            }
-
-            var sideToMove = position.SideToMove;
-            var board = position.Board;
-            var handPieces = position.HandPieces;
-            var nonCaptureMoves = new List<Move>();
-
-            // 駒を移動する指し手
-            for (int fileFrom = 0; fileFrom < Position.BoardSize; ++fileFrom)
-            {
-                for (int rankFrom = 0; rankFrom < Position.BoardSize; ++rankFrom)
-                {
-                    var pieceFrom = board[fileFrom, rankFrom];
-                    if (pieceFrom == Piece.NoPiece)
-                    {
-                        // 駒が置かれていないので何もしない
-                        continue;
-                    }
-
-                    if (pieceFrom.ToColor() != sideToMove)
-                    {
-                        // 相手の駒なので何もしない
-                        continue;
-                    }
-
-                    foreach (var moveDirection in MoveDirections[(int)pieceFrom])
-                    {
-                        int maxDistance = moveDirection.Long ? 8 : 1;
-                        int fileTo = fileFrom;
-                        int rankTo = rankFrom;
-                        for (int distance = 0; distance < maxDistance; ++distance)
-                        {
-                            fileTo += moveDirection.Direction.DeltaFile;
-                            rankTo += moveDirection.Direction.DeltaRank;
-
-                            if (fileTo < 0 || Position.BoardSize <= fileTo || rankTo < 0 || Position.BoardSize <= rankTo)
-                            {
-                                // 盤外
-                                continue;
-                            }
-
-                            var pieceTo = board[fileTo, rankTo];
-                            if (pieceTo != Piece.NoPiece && pieceTo.ToColor() == sideToMove)
-                            {
-                                // 味方の駒がいる
-                                break;
-                            }
-
-                            if (pieceFrom.CanPromote() &&
-                                ((sideToMove == Color.Black && rankTo <= 2)
-                                || (sideToMove == Color.White && rankTo >= 6)
-                                || (sideToMove == Color.Black && rankFrom <= 2)
-                                || (sideToMove == Color.White && rankFrom >= 6)))
-                            {
-                                // 成って移動する
-                                if (pieceTo != Piece.NoPiece && fileTo == fileCapture && rankTo == rankCapture)
-                                {
-                                    // 駒を取る指し手かつ指定されたマスに移動する指し手のみ返す
-                                    yield return new Move
-                                    {
-                                        FileFrom = fileFrom,
-                                        RankFrom = rankFrom,
-                                        PieceFrom = pieceFrom,
-                                        FileTo = fileTo,
-                                        RankTo = rankTo,
-                                        PieceTo = pieceTo,
-                                        Drop = false,
-                                        Promotion = true,
-                                        SideToMove = sideToMove,
-                                    };
-                                }
-                            }
-
-                            if (CanPutWithoutPromotion(pieceFrom, rankTo))
-                            {
-                                // 成らずに移動する
-                                if (pieceTo != Piece.NoPiece && fileTo == fileCapture && rankTo == rankCapture)
-                                {
-                                    // 駒を取る指し手かつ指定されたマスに移動する指し手のみ返す
-                                    yield return new Move
-                                    {
-                                        FileFrom = fileFrom,
-                                        RankFrom = rankFrom,
-                                        PieceFrom = pieceFrom,
-                                        FileTo = fileTo,
-                                        RankTo = rankTo,
-                                        PieceTo = pieceTo,
-                                        Drop = false,
-                                        Promotion = false,
-                                        SideToMove = sideToMove,
-                                    };
-                                }
-                            }
-
-                            if (pieceTo != Piece.NoPiece)
-                            {
-                                // 相手の駒なので、ここで利きが止まる
-                                break;
-                            }
-                        }
                     }
                 }
             }
