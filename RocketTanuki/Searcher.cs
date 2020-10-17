@@ -100,7 +100,10 @@ namespace RocketTanuki
         {
             if (depth == 0)
             {
-                return QuiescenceSearch(position, alpha, beta, depth, playFromRootNode, fileLastMove, rankLastMove);
+                return new BestMove
+                {
+                    Value = Evaluator.Instance.Evaluate(position),
+                };
             }
 
             if (threadId == 0 && (callCount++) % 4096 == 0)
