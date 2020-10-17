@@ -48,19 +48,17 @@ namespace RocketTanuki
             long mask = numEntries - 1;
             long index = hash & mask;
 
-            if (Entries[index].Generation == generation && Entries[index].Depth >= depth)
+            if (bound == Bound.Exact
+                || hash != Entries[index].Hash
+                || Entries[index].Depth < depth)
             {
-                // 世代が同じで、深さが同じか低かった場合、
-                // 価値が低いので記録しない。
-                return;
+                Entries[index].Hash = hash;
+                Entries[index].Move = move.ToUshort();
+                Entries[index].Depth = (sbyte)depth;
+                Entries[index].Bound = (byte)bound;
+                Entries[index].Generation = (ushort)generation;
+                Entries[index].Value = (short)value;
             }
-
-            Entries[index].Hash = hash;
-            Entries[index].Move = move.ToUshort();
-            Entries[index].Depth = (sbyte)depth;
-            Entries[index].Bound = (byte)bound;
-            Entries[index].Generation = (ushort)generation;
-            Entries[index].Value = (short)value;
         }
 
         public TranspositionTableEntry Probe(long hash, out bool found)
