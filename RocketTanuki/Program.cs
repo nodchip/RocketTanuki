@@ -48,6 +48,8 @@ namespace RocketTanuki
                     case "usi":
                         Console.WriteLine("id name Rocket Tanuki");
                         Console.WriteLine("id author nodchip");
+                        Console.WriteLine($"option name {USI_Ponder} type check default true");
+                        Console.WriteLine($"option name {USI_Hash} type spin default 256");
                         Console.WriteLine($"option name {EvalFile} type string default eval");
                         Console.WriteLine($"option name {BookFile} type string default user_book1.db");
                         Console.WriteLine($"option name {IgnoreBookPlay} type check default true");
