@@ -25,6 +25,11 @@ namespace RocketTanuki
 
         public void Load(Dictionary<string, string> options)
         {
+            if (options[Program.BookFile] == "no_book")
+            {
+                return;
+            }
+
             var bookFilePath = Path.Combine("book", options[Program.BookFile]);
             ignoreBookPlay = options[Program.IgnoreBookPlay] == "true";
 
