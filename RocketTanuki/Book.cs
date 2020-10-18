@@ -27,6 +27,7 @@ namespace RocketTanuki
         {
             if (options[Program.BookFile] == "no_book")
             {
+                sfenToBookMoves = null;
                 return;
             }
 
@@ -100,6 +101,11 @@ namespace RocketTanuki
         /// <returns></returns>
         public BestMove Select(Position position)
         {
+            if (sfenToBookMoves == null)
+            {
+                return null;
+            }
+
             var sfen = position.ToSfenString();
             if (ignoreBookPlay)
             {
