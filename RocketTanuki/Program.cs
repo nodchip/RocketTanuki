@@ -4,12 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RocketTanuki
 {
-    public class Program
+	public class Program
     {
         public const string USI_Ponder = "USI_Ponder";
         public const string USI_Hash = "USI_Hash";
