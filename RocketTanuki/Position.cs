@@ -16,11 +16,31 @@ namespace RocketTanuki
         public const string MatsuriSfen = "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p 1";
         public const string MaxSfen = "8R/kSS1S1K2/4B4/9/9/9/9/9/3L1L1L1 b RBGSNLP3g3n17p 1";
 
+        /// <summary>
+        /// 盤面の一辺のマス目の数
+        /// </summary>
         public const int BoardSize = 9;
+
+        /// <summary>
+        /// 手番
+        /// </summary>
         public Color SideToMove { get; set; }
+
+        /// <summary>
+        /// 盤面
+        /// </summary>
         public Piece[,] Board { get; } = new Piece[BoardSize, BoardSize];
+
+        /// <summary>
+        /// 持ち駒
+        /// </summary>
         public int[] HandPieces { get; } = new int[(int)Piece.NumPieces];
+
+        /// <summary>
+        /// 手数
+        /// </summary>
         public int Play { get; set; }
+
         public long Hash { get; set; }
         public int BlackKingFile { get; set; }
         public int BlackKingRank { get; set; }
